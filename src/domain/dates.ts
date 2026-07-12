@@ -36,6 +36,26 @@ export function isValidISODate(value: string): boolean {
   );
 }
 
+/** ISO-Datum um `delta` Tage verschieben (rein über UTC, kein DST-Risiko). */
+export function addDaysISO(iso: string, delta: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + delta));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+}
+
+/** ISO-Wochentag eines Kalendertags: 1 = Montag … 7 = Sonntag. */
+export function isoWeekday(iso: string): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  const day = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return day === 0 ? 7 : day;
+}
+
+/** Montag der Woche, die `iso` enthält. */
+export function weekStartISO(iso: string): string {
+  return addDaysISO(iso, 1 - isoWeekday(iso));
+}
+
 /** Lesbares deutsches Datum, z.B. "Sonntag, 12. Juli". */
 export function formatLongDate(
   iso: string,
