@@ -39,6 +39,23 @@ Läuft bei jedem Push automatisch via GitHub Actions.
 - Lokal: `file:local.db` · Geräte-Sync später via Turso
   (`DATABASE_URL` + `DATABASE_AUTH_TOKEN` in `.env.local`)
 
+## Deployment (Vercel)
+
+1. <https://vercel.com/new> → **Import Git Repository** → `mdbts9qghm-max/Vision`
+   (ggf. GitHub-Konto verbinden und Vercel Zugriff auf das Repo geben).
+2. Framework-Preset **Next.js** wird automatisch erkannt — nichts ändern.
+3. Unter **Environment Variables** vor dem ersten Deploy setzen:
+   - `PASSCODE` — dein Login-Passcode
+   - `SESSION_SECRET` — langer Zufallswert, z. B. aus `openssl rand -hex 32`
+   (ohne `SESSION_SECRET` beantwortet die App jede Anfrage mit einem Fehler.)
+4. **Deploy** → HTTPS-URL (z. B. `https://vision-….vercel.app`).
+   Jeder Push auf `main` deployt danach automatisch.
+
+Noch ohne Datenbank-Anbindung nutzbar; sobald Habits (Roadmap-Schritt 2)
+live gehen, zusätzlich `DATABASE_URL` + `DATABASE_AUTH_TOKEN` einer
+Turso-Datenbank setzen — die lokale `file:local.db` funktioniert auf
+Vercels Serverless-Dateisystem nicht.
+
 ## Aufs iPhone (PWA)
 
 Deployte HTTPS-URL in Safari öffnen → Teilen → „Zum Home-Bildschirm" →
