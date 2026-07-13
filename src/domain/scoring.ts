@@ -45,6 +45,27 @@ export function weeklyProgress(
 }
 
 /**
+ * Gesamter Wochenfortschritt über mehrere Gewohnheiten:
+ * Summe der (gedeckelten) Erledigungen gegen die Summe der Wochensolls.
+ */
+export function overallWeeklyProgress(
+  items: Array<{
+    recurrence: Recurrence;
+    completedDates: Iterable<string>;
+  }>,
+  refDate: string,
+): WeeklyProgress {
+  let done = 0;
+  let target = 0;
+  for (const item of items) {
+    const p = weeklyProgress(item.recurrence, item.completedDates, refDate);
+    done += p.done;
+    target += p.target;
+  }
+  return { done, target };
+}
+
+/**
  * Erfolgsquote (0..1) über die letzten `windowDays` Tage, frühestens ab
  * `since` (Anlegedatum der Gewohnheit — davor gab es nichts zu erfüllen).
  * `null`, wenn im Fenster noch nichts fällig war.

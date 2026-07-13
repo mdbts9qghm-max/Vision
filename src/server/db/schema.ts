@@ -51,6 +51,13 @@ export const habitCompletions = sqliteTable(
   ],
 );
 
+export const dayFocus = sqliteTable("day_focus", {
+  id: id(),
+  date: text("date").notNull().unique(), // YYYY-MM-DD, Europe/Berlin
+  text: text("text").notNull(),
+  createdAt: createdAt(),
+});
+
 export const goals = sqliteTable("goals", {
   id: id(),
   title: text("title").notNull(),

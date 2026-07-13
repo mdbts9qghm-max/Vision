@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { successRate, weeklyProgress } from "./scoring";
+import { overallWeeklyProgress, successRate, weeklyProgress } from "./scoring";
 import type { Recurrence } from "./recurrence";
 
 // 2026-07-12 ist ein Sonntag; Woche Mo 2026-07-06 … So 2026-07-12.
@@ -29,6 +29,25 @@ describe("weeklyProgress", () => {
         TODAY,
       ),
     ).toEqual({ done: 3, target: 3 });
+  });
+});
+
+describe("overallWeeklyProgress", () => {
+  it("summiert Erledigungen und Solls über alle Gewohnheiten", () => {
+    const result = overallWeeklyProgress(
+      [
+        { recurrence: daily, completedDates: ["2026-07-06", "2026-07-07"] },
+        { recurrence: x3, completedDates: ["2026-07-08"] },
+        { recurrence: moMiFr, completedDates: [] },
+      ],
+      TODAY,
+    );
+    // 2/7 + 1/3 + 0/3
+    expect(result).toEqual({ done: 3, target: 13 });
+  });
+
+  it("leere Liste → 0/0", () => {
+    expect(overallWeeklyProgress([], TODAY)).toEqual({ done: 0, target: 0 });
   });
 });
 
