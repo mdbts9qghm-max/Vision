@@ -15,6 +15,13 @@
       "when": 1783946699718,
       "tag": "0001_big_flatman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783956423928,
+      "tag": "0002_fat_mojo",
+      "breakpoints": true
     }
   ]
 }

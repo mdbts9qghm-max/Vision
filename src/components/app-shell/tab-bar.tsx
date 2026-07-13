@@ -2,12 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Dumbbell, LayoutDashboard, Repeat, Target } from "lucide-react";
+import {
+  CalendarRange,
+  Dumbbell,
+  LayoutDashboard,
+  Repeat,
+  Target,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/dashboard", label: "Heute", icon: LayoutDashboard },
   { href: "/habits", label: "Habits", icon: Repeat },
+  { href: "/coach", label: "Coach", icon: CalendarRange },
   { href: "/goals", label: "Ziele", icon: Target },
   { href: "/fitness", label: "Fitness", icon: Dumbbell },
 ] as const;
@@ -26,7 +33,7 @@ export function TabBar() {
               href={href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-w-16 flex-col items-center gap-1 px-3 py-2 text-xs transition-colors",
+                "flex min-w-14 flex-col items-center gap-1 px-2 py-2 text-xs transition-colors",
                 active
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground",

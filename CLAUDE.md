@@ -105,6 +105,17 @@ Datumslogik immer in lokaler Zeitzone des Nutzers (Europe/Berlin), Tage als
 5. Fitness: Gewichts-Log mit Trendlinie, Trainings-Log, manuelle Schritte/Schlaf
 6. Basis-Analytics: Wochen-Chart pro Habit, Gewichtsverlauf
 
+**Trainings-Coach (vorgezogen, Owner-Entscheidung 07/2026):**
+Regelbasierter, deterministischer Planer für Schichtarbeit + 100k-Ultra-Aufbau
+(Leitfaden in docs/coach-leitfaden.md). Phase 1 (fertig): Schichtkalender
+(5 Typen), 14-Tage-Plan mit Begründungen, Wochenziel-km mit Progression
+(+7 %/Woche, Deload alle 4 Wochen, Nachtschicht-Teil-Deload), Gym-Ziel 3×
+(flexibel 2×), Heute-Empfehlung auf dem Dashboard, km-Tracking im
+Trainings-Log. Owner ist Laufanfänger → Basis 15 km/Woche, nur Z2, keine
+Intensität. Phase 2 (offen): Autoregulation über Schlaf/Befinden
+(Qualität automatisch herabstufen), Renndatum-Periodisierung,
+Back-to-Back-Long-Runs im Aufbau.
+
 **v1.0 (danach):**
 - Web-Push-Erinnerungen (iOS-PWA unterstützt Push ab 16.4, nur installiert)
 - Jahres-Heatmap pro Gewohnheit, Wochen-Review-Screen

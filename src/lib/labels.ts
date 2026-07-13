@@ -48,6 +48,28 @@ export const PRIORITY_LABEL: Record<"low" | "medium" | "high", string> = {
   high: "Hoch",
 };
 
+export const SHIFT_TYPE_LABEL: Record<
+  "day" | "night" | "sleep" | "free" | "v",
+  string
+> = {
+  day: "Tagschicht",
+  night: "Nachtschicht",
+  sleep: "Schlaftag",
+  free: "Frei",
+  v: "V-Schicht",
+};
+
+export const SESSION_KIND_LABEL: Record<
+  "longrun" | "run" | "easy" | "gym" | "rest",
+  string
+> = {
+  longrun: "Long Run",
+  run: "Lauf (moderat)",
+  easy: "Lockerer Lauf",
+  gym: "Kraft",
+  rest: "Ruhe",
+};
+
 /** "noch 12 Tage" · "heute fällig" · "3 Tage überfällig" */
 export function deadlineLabel(daysLeft: number): string {
   if (daysLeft > 1) return `noch ${daysLeft} Tage`;

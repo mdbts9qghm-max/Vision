@@ -14,6 +14,7 @@ export function WorkoutForm() {
   const [type, setType] = useState<string>("Kraft");
   const [custom, setCustom] = useState(false);
   const [duration, setDuration] = useState("");
+  const [distance, setDistance] = useState("");
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const [error, setError] = useState<string>();
@@ -27,12 +28,17 @@ export function WorkoutForm() {
         date,
         type,
         durationMin: Number(duration),
+        distanceKm:
+          distance.trim() === ""
+            ? undefined
+            : Number(distance.replace(",", ".")),
         note: note || undefined,
       });
       if (result.error) {
         setError(result.error);
       } else {
         setDuration("");
+        setDistance("");
         setNote("");
       }
     });
@@ -88,7 +94,7 @@ export function WorkoutForm() {
         />
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1">
           <Label htmlFor="workout-duration" className="text-xs text-muted-foreground">
             Dauer (Min.)
@@ -100,6 +106,18 @@ export function WorkoutForm() {
             inputMode="numeric"
             placeholder="60"
             required
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="workout-distance" className="text-xs text-muted-foreground">
+            km (Lauf)
+          </Label>
+          <Input
+            id="workout-distance"
+            value={distance}
+            onChange={(e) => setDistance(e.target.value)}
+            inputMode="decimal"
+            placeholder="–"
           />
         </div>
         <div className="space-y-1">

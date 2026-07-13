@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { logout } from "@/server/actions/auth";
 import { getHabitsWithCompletions } from "@/server/queries/habits";
 import { getFocusForDate } from "@/server/queries/focus";
+import { getPlanRange } from "@/server/queries/coach";
 import { formatLongDate, todayISO } from "@/domain/dates";
 import { isDueOn } from "@/domain/recurrence";
 import { overallWeeklyProgress, weeklyProgress } from "@/domain/scoring";
@@ -14,15 +15,18 @@ import { EmptyState } from "@/components/empty-state";
 import { CheckButton } from "@/components/habits/check-button";
 import { FocusCard } from "@/components/dashboard/focus-card";
 import { WeekProgressCard } from "@/components/dashboard/week-progress";
+import { TodayTrainingCard } from "@/components/dashboard/today-training";
 
 export const metadata: Metadata = { title: "Heute — Vision" };
 
 export default async function DashboardPage() {
   const today = todayISO();
-  const [all, focus] = await Promise.all([
+  const [all, focus, todayPlan] = await Promise.all([
     getHabitsWithCompletions(),
     getFocusForDate(today),
+    getPlanRange(today, today),
   ]);
+  const todaySession = todayPlan[0];
 
   const active = all.filter(({ habit }) => !habit.archivedAt);
   const weekTotal = overallWeeklyProgress(
@@ -85,6 +89,7 @@ export default async function DashboardPage() {
       ) : (
         <>
           <FocusCard key={focus ?? "none"} initialFocus={focus} />
+          {todaySession ? <TodayTrainingCard session={todaySession} /> : null}
           <WeekProgressCard progress={weekTotal} />
 
           {dueToday.length === 0 ? (

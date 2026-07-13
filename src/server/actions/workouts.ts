@@ -20,6 +20,11 @@ const workoutSchema = z.object({
     .int("Nur ganze Minuten.")
     .min(1, "Mindestens 1 Minute.")
     .max(1440, "Maximal 24 Stunden."),
+  distanceKm: z
+    .number()
+    .min(0.1, "Distanz zu klein.")
+    .max(500, "Distanz zu groß.")
+    .optional(),
   note: z.string().trim().max(500).optional(),
 });
 
@@ -40,9 +45,11 @@ export async function createWorkout(
     date: parsed.data.date,
     type: parsed.data.type,
     durationMin: parsed.data.durationMin,
+    distanceKm: parsed.data.distanceKm ?? null,
     note: parsed.data.note || null,
   });
   revalidatePath("/fitness");
+  revalidatePath("/coach");
   return {};
 }
 
@@ -53,5 +60,6 @@ export async function deleteWorkout(rawId: string): Promise<ActionState> {
 
   await db.delete(workouts).where(eq(workouts.id, id.data));
   revalidatePath("/fitness");
+  revalidatePath("/coach");
   return {};
 }
