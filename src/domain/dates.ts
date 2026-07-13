@@ -51,6 +51,14 @@ export function isoWeekday(iso: string): number {
   return day === 0 ? 7 : day;
 }
 
+/** Ganze Tage von `from` bis `to` (positiv, wenn `to` später liegt). */
+export function diffDaysISO(from: string, to: string): number {
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  const ms = Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd);
+  return Math.round(ms / 86_400_000);
+}
+
 /** Montag der Woche, die `iso` enthält. */
 export function weekStartISO(iso: string): string {
   return addDaysISO(iso, 1 - isoWeekday(iso));
