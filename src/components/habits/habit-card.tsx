@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Flame, Pencil } from "lucide-react";
+import { ChevronRight, Flame } from "lucide-react";
 import type { HabitWithCompletions } from "@/server/queries/habits";
 import { toISODate, todayISO } from "@/domain/dates";
 import { isDueOn } from "@/domain/recurrence";
@@ -55,11 +55,11 @@ export function HabitCard({ item }: { item: HabitWithCompletions }) {
         </div>
 
         <Link
-          href={`/habits/${habit.id}/edit`}
-          aria-label={`${habit.name} bearbeiten`}
+          href={`/habits/${habit.id}`}
+          aria-label={`${habit.name} — Details und Verlauf`}
           className="p-2 text-muted-foreground transition-colors hover:text-foreground"
         >
-          <Pencil className="size-4" aria-hidden />
+          <ChevronRight className="size-4" aria-hidden />
         </Link>
       </CardContent>
     </Card>
