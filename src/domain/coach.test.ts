@@ -103,6 +103,24 @@ describe("planWeek — Regelzuordnung", () => {
     expect(plan.days[lrIndex + 1]?.kind ?? "rest").not.toBe("gym");
   });
 
+  it("Back-to-Back-Long-Run ab 40 km, wenn auf den Long Run ein freier Tag folgt", () => {
+    const shifts = week(["day", "free", "free", "day", "day", "night", "sleep"]);
+    const big = planWeek(params, WEEK, shifts, 44);
+    const lr = big.days.find((d) => d.kind === "longrun");
+    const b2b = big.days.find(
+      (d) => d.kind === "run" && d.reason.includes("Back-to-Back"),
+    );
+    expect(lr?.date).toBe("2026-07-14");
+    expect(b2b?.date).toBe("2026-07-15");
+    expect(b2b?.targetKm).toBe(11); // 25 % von 44
+
+    // Unter 40 km: kein Back-to-Back.
+    const small = planWeek(params, WEEK, shifts, 20);
+    expect(
+      small.days.some((d) => d.reason.includes("Back-to-Back")),
+    ).toBe(false);
+  });
+
   it("unbekannte Schichten werden nicht verplant", () => {
     const plan = planWeek(params, WEEK, {}, 15);
     expect(plan.days.every((d) => d.kind === "rest")).toBe(true);

@@ -130,6 +130,14 @@ export const plannedSessions = sqliteTable("planned_sessions", {
   createdAt: createdAt(),
 });
 
+/** Täglicher Erholungs-Check (ein Tap): Grundlage der Autoregulation. */
+export const readinessChecks = sqliteTable("readiness_checks", {
+  id: id(),
+  date: text("date").notNull().unique(), // YYYY-MM-DD
+  score: text("score", { enum: ["good", "ok", "low"] }).notNull(),
+  createdAt: createdAt(),
+});
+
 /** Genau eine Zeile (id = "singleton") — Parameter des Coaches. */
 export const coachSettings = sqliteTable("coach_settings", {
   id: text("id").primaryKey().default("singleton"),

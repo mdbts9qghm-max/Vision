@@ -5,6 +5,8 @@ import { logout } from "@/server/actions/auth";
 import { getHabitsWithCompletions } from "@/server/queries/habits";
 import { getFocusForDate } from "@/server/queries/focus";
 import { getPlanRange } from "@/server/queries/coach";
+import { getDaySignals } from "@/server/queries/readiness";
+import { adjustSession } from "@/domain/readiness";
 import { formatLongDate, todayISO } from "@/domain/dates";
 import { isDueOn } from "@/domain/recurrence";
 import { overallWeeklyProgress, weeklyProgress } from "@/domain/scoring";
@@ -16,17 +18,22 @@ import { CheckButton } from "@/components/habits/check-button";
 import { FocusCard } from "@/components/dashboard/focus-card";
 import { WeekProgressCard } from "@/components/dashboard/week-progress";
 import { TodayTrainingCard } from "@/components/dashboard/today-training";
+import { ReadinessCheck } from "@/components/dashboard/readiness-check";
 
 export const metadata: Metadata = { title: "Heute — Vision" };
 
 export default async function DashboardPage() {
   const today = todayISO();
-  const [all, focus, todayPlan] = await Promise.all([
+  const [all, focus, todayPlan, signals] = await Promise.all([
     getHabitsWithCompletions(),
     getFocusForDate(today),
     getPlanRange(today, today),
+    getDaySignals(today),
   ]);
   const todaySession = todayPlan[0];
+  const adjusted = todaySession
+    ? adjustSession(todaySession, signals)
+    : undefined;
 
   const active = all.filter(({ habit }) => !habit.archivedAt);
   const weekTotal = overallWeeklyProgress(
@@ -89,7 +96,10 @@ export default async function DashboardPage() {
       ) : (
         <>
           <FocusCard key={focus ?? "none"} initialFocus={focus} />
-          {todaySession ? <TodayTrainingCard session={todaySession} /> : null}
+          <ReadinessCheck value={signals.readiness} />
+          {todaySession && adjusted ? (
+            <TodayTrainingCard session={todaySession} adjusted={adjusted} />
+          ) : null}
           <WeekProgressCard progress={weekTotal} />
 
           {dueToday.length === 0 ? (

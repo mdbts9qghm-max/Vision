@@ -158,7 +158,17 @@ export function planWeek(
   let longRunDay: string | undefined;
   let longRunKm = 0;
   if (freeDays.length > 0) {
-    longRunDay = [...freeDays].sort((a, b) => lrScore(b) - lrScore(a))[0];
+    // Ab Back-to-Back-Volumen bevorzugt auf den ersten von zwei
+    // aufeinanderfolgenden freien Tagen legen.
+    let candidates = freeDays;
+    if (weekKm >= 40) {
+      const withNextFree = freeDays.filter((d) => {
+        const next = addDaysISO(d, 1);
+        return dates.includes(next) && shiftOf(next) === "free";
+      });
+      if (withNextFree.length > 0) candidates = withNextFree;
+    }
+    longRunDay = [...candidates].sort((a, b) => lrScore(b) - lrScore(a))[0];
     longRunKm = round1(weekKm * 0.35);
     claim(
       longRunDay,
@@ -175,6 +185,26 @@ export function planWeek(
       "Keine Freischicht diese Woche: moderater längerer Lauf am Schlaftag-Nachmittag — erst nachschlafen, bewusst gedeckelt.",
       longRunKm,
     );
+  }
+
+  // 2b) Back-to-Back-Long-Run (Ultra-Aufbau, Leitfaden Kap. 6): ab 40 km
+  //     Wochenumfang, wenn direkt auf den Long Run ein freier Tag folgt.
+  let b2bKm = 0;
+  if (longRunDay !== undefined && weekKm >= 40) {
+    const nextDay = addDaysISO(longRunDay, 1);
+    if (
+      dates.includes(nextDay) &&
+      !days.has(nextDay) &&
+      shiftOf(nextDay) === "free"
+    ) {
+      b2bKm = round1(weekKm * 0.25);
+      claim(
+        nextDay,
+        "run",
+        "Back-to-Back-Long-Run: zweiter längerer Lauf auf ermüdeten Beinen — trainiert genau die Ermüdungsresistenz, die 100 km verlangen. Betont ruhig.",
+        b2bKm,
+      );
+    }
   }
 
   // 3) Kraft: Tagschicht-Tage zuerst, dann V, dann frei/Schlaftag —
@@ -213,7 +243,7 @@ export function planWeek(
   }
 
   // 4) Lockeres Z2-Volumen verteilt die restlichen Kilometer.
-  const remainingKm = Math.max(weekKm - longRunKm, 0);
+  const remainingKm = Math.max(weekKm - longRunKm - b2bKm, 0);
   const runPriority = (d: string): number => {
     const s = shiftOf(d);
     if (s === "free") return 3;

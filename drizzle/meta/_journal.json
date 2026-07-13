@@ -22,6 +22,13 @@
       "when": 1783956423928,
       "tag": "0002_fat_mojo",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1783971273396,
+      "tag": "0003_whole_risque",
+      "breakpoints": true
     }
   ]
 }
