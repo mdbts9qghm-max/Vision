@@ -1,4 +1,4 @@
-import { BedDouble, Dumbbell, Footprints, Mountain } from "lucide-react";
+import { Activity, BedDouble, Dumbbell, Footprints, Mountain } from "lucide-react";
 import type { PlannedSession } from "@/server/queries/coach";
 import type { ShiftType } from "@/domain/coach";
 import { SESSION_KIND_LABEL } from "@/lib/labels";
@@ -12,6 +12,7 @@ const KIND_ICON = {
   run: Footprints,
   easy: Footprints,
   gym: Dumbbell,
+  mobility: Activity,
   rest: BedDouble,
 } as const;
 
@@ -45,7 +46,9 @@ export function PlanDay({
             <Icon
               className={cn(
                 "mt-0.5 size-4 shrink-0",
-                kind === "rest" ? "text-muted-foreground" : "text-primary",
+                kind === "rest" || kind === "mobility"
+                  ? "text-muted-foreground"
+                  : "text-primary",
               )}
               aria-hidden
             />

@@ -122,8 +122,9 @@ export const shifts = sqliteTable("shifts", {
 export const plannedSessions = sqliteTable("planned_sessions", {
   id: id(),
   date: text("date").notNull().unique(), // YYYY-MM-DD
-  kind: text("kind", { enum: ["longrun", "run", "easy", "gym", "rest"] })
-    .notNull(),
+  kind: text("kind", {
+    enum: ["longrun", "run", "easy", "gym", "mobility", "rest"],
+  }).notNull(),
   targetKm: real("target_km"),
   targetMin: integer("target_min"), // Startblock: Dauer statt Distanz
   optional: integer("optional", { mode: "boolean" }).notNull().default(false),

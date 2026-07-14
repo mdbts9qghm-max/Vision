@@ -45,7 +45,10 @@ export function adjustSession(
   const kind = session.kind;
   const targetKm = session.targetKm ?? undefined;
   const targetMin = session.targetMin ?? undefined;
-  if (kind === "rest") return { kind, targetKm, targetMin, note: null };
+  // Ruhe bleibt Ruhe; Mobility ist selbst Erholung und bleibt unangetastet.
+  if (kind === "rest" || kind === "mobility") {
+    return { kind, targetKm, targetMin, note: null };
+  }
 
   const warnings = warningSignals(signals);
   if (warnings >= 2) {

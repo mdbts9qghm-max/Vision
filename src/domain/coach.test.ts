@@ -54,7 +54,8 @@ describe("baseTargetKm — Progression + Deload ab Ende Startblock", () => {
 });
 
 describe("planStartblockWeek — Run-Walk nach Minuten", () => {
-  const shifts = week(["day", "day", "free", "day", "night", "night", "sleep"]);
+  // Mo Tag, Di Frei, Mi Tag, Do Frei, Fr Nacht, Sa Nacht, So Schlaf
+  const shifts = week(["day", "free", "day", "free", "night", "night", "sleep"]);
 
   it("Woche 1: 3× 20 Min. mit 2/2-Struktur und Ruhetag dazwischen", () => {
     const plan = planStartblockWeek(WEEK, shifts, 0);
@@ -74,14 +75,16 @@ describe("planStartblockWeek — Run-Walk nach Minuten", () => {
     const plan = planStartblockWeek(WEEK, shifts, 4);
     const long = plan.days.find((d) => d.kind === "longrun");
     expect(long?.targetMin).toBe(40);
-    expect(long?.date).toBe("2026-07-15"); // Freischicht
+    expect(long?.date).toBe("2026-07-14"); // erste Freischicht
   });
 
-  it("Kraft max. 2× an lauffreien Tagen, Nacht bleibt frei", () => {
+  it("Kraft max. 2×, Tagschicht nur Mobility, Nacht bleibt frei", () => {
     const plan = planStartblockWeek(WEEK, shifts, 2);
     expect(
       plan.days.filter((d) => d.kind === "gym").length,
     ).toBeLessThanOrEqual(2);
+    expect(plan.days[0].kind).toBe("mobility"); // Tagschicht Mo
+    expect(plan.days[2].kind).toBe("mobility"); // Tagschicht Mi
     expect(plan.days[4].kind).toBe("rest"); // Nachtschicht
   });
 });
@@ -104,7 +107,7 @@ describe("effectiveTargetKm — Steigerung nur bei Umsetzung", () => {
 });
 
 describe("planWeek — Regelzuordnung", () => {
-  it("Long Run auf die Freischicht, Kraft auf Tagschichten, Nacht = Ruhe", () => {
+  it("Long Run auf Freischicht, Tagschicht = nur Mobility, Nacht = Ruhe", () => {
     // Mo Tag, Di Tag, Mi Frei, Do Tag, Fr Nacht, Sa Nacht, So Schlaf
     const plan = planWeek(
       params,
@@ -114,13 +117,30 @@ describe("planWeek — Regelzuordnung", () => {
     );
     const byKind = Object.fromEntries(plan.days.map((d) => [d.date, d.kind]));
     expect(byKind["2026-07-15"]).toBe("longrun"); // Freischicht
-    expect(plan.days.filter((d) => d.kind === "gym")).toHaveLength(2); // Mo+Do (Di grenzt an nichts? -> nicht 2 nebeneinander)
+    expect(byKind["2026-07-13"]).toBe("mobility"); // Tagschicht
+    expect(byKind["2026-07-14"]).toBe("mobility");
+    expect(byKind["2026-07-16"]).toBe("mobility");
     expect(byKind["2026-07-17"]).toBe("rest"); // Nacht
     expect(byKind["2026-07-18"]).toBe("rest"); // Nacht
-    // km-Summe ≈ Wochenziel
+    expect(byKind["2026-07-19"]).toBe("gym"); // Schlaftag als einziger Kraft-Slot
+    // Kein Lauf auf einer Tagschicht
+    expect(
+      plan.days.filter(
+        (d) => d.targetKm !== undefined && byKind[d.date] === "mobility",
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("bei knappen Slots wird das Wochenziel nicht erzwungen", () => {
+    const plan = planWeek(
+      params,
+      WEEK,
+      week(["day", "day", "free", "day", "night", "night", "sleep"]),
+      15,
+    );
     const km = plan.days.reduce((s, d) => s + (d.targetKm ?? 0), 0);
-    expect(km).toBeGreaterThanOrEqual(14);
-    expect(km).toBeLessThanOrEqual(16);
+    // Nur die Freischicht ist lauffähig → nur der Long Run (35 %).
+    expect(km).toBeCloseTo(5.3);
   });
 
   it("ohne Freischicht: moderater Long Run auf dem Schlaftag, gedeckelt", () => {

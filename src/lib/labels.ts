@@ -60,13 +60,14 @@ export const SHIFT_TYPE_LABEL: Record<
 };
 
 export const SESSION_KIND_LABEL: Record<
-  "longrun" | "run" | "easy" | "gym" | "rest",
+  "longrun" | "run" | "easy" | "gym" | "mobility" | "rest",
   string
 > = {
   longrun: "Long Run",
   run: "Lauf (moderat)",
   easy: "Lockerer Lauf",
   gym: "Kraft",
+  mobility: "Mobility",
   rest: "Ruhe",
 };
 

@@ -20,7 +20,16 @@
 import { addDaysISO } from "./dates";
 
 export type ShiftType = "day" | "night" | "sleep" | "free" | "v";
-export type SessionKind = "longrun" | "run" | "easy" | "gym" | "rest";
+export type SessionKind =
+  | "longrun"
+  | "run"
+  | "easy"
+  | "gym"
+  | "mobility"
+  | "rest";
+
+const DAY_SHIFT_MOBILITY_REASON =
+  "Tagschicht: 12-h-Schicht — Training bringt hier mehr Risiko als Reiz. Höchstens 10–15 min Mobility am Abend.";
 
 export interface CoachParams {
   weeklyKmBase: number;
@@ -179,6 +188,13 @@ export function planStartblockWeek(
         reason:
           "Nachtschicht: zirkadianes Tief + Schlafschuld. Nachmittags-Nap; Training hat heute frei.",
       });
+    } else if (s === "day") {
+      claim({
+        date: d,
+        kind: "mobility",
+        optional: true,
+        reason: DAY_SHIFT_MOBILITY_REASON,
+      });
     }
   }
 
@@ -187,7 +203,6 @@ export function planStartblockWeek(
     const s = shiftOf(d);
     if (s === "free") return 4;
     if (s === "sleep") return 3;
-    if (s === "day") return 2;
     if (s === "v") return 1;
     return 0;
   };
@@ -291,7 +306,8 @@ export function planWeek(
     });
   };
 
-  // 1) Fixe Tage: Nachtschichten und unbekannte Schichten.
+  // 1) Fixe Tage: Nachtschichten, Tagschichten (nur Mobility) und
+  //    unbekannte Schichten.
   for (const d of dates) {
     const s = shiftOf(d);
     if (s === undefined) {
@@ -304,6 +320,8 @@ export function planWeek(
         undefined,
         true,
       );
+    } else if (s === "day") {
+      claim(d, "mobility", DAY_SHIFT_MOBILITY_REASON, undefined, true);
     }
   }
   const available = () => dates.filter((d) => !days.has(d));
@@ -378,7 +396,6 @@ export function planWeek(
     (d !== longRunDay && d !== addDaysISO(longRunDay, 1));
   const gymPriority = (d: string): number => {
     const s = shiftOf(d);
-    if (s === "day") return 3;
     if (s === "v") return 2;
     if (s === "free" || s === "sleep") return 1;
     return 0;
@@ -397,7 +414,7 @@ export function planWeek(
     claim(
       d,
       "gym",
-      s === "day" || s === "v"
+      s === "v"
         ? "Kurze Krafteinheit nach der Schicht (30–45 min): hintere Kette, einbeinig, Rumpf. Kraft stört den Schlaf weniger als Intervalle."
         : s === "sleep"
           ? "Erst nachschlafen, dann Krafteinheit am Nachmittag — mit Abstand zum Long Run."
@@ -412,7 +429,6 @@ export function planWeek(
     const s = shiftOf(d);
     if (s === "free") return 3;
     if (s === "sleep") return 2;
-    if (s === "day") return 1;
     if (s === "v") return 0.5;
     return 0;
   };
@@ -450,12 +466,10 @@ export function planWeek(
         d,
         isModerate ? "run" : "easy",
         s === "sleep"
-          ? "Schlaftag: erst nachschlafen, dann lockerer Lauf am Nachmittag — Leistungshoch, aber kein Qualitätsreiz im Schlafdefizit."
-          : s === "day"
-            ? "Tagschicht: kurzer, ganz lockerer Lauf — früh vor oder direkt nach der Schicht, Umfang klein halten."
-            : s === "v"
-              ? "V-Schicht: nur kurz und locker — enges Zeitfenster, Schlaf hat Vorrang."
-              : "Lockerer Grundlagenlauf (Zone 2) am freien Tag.",
+          ? "Schlaftag: erst nachschlafen, dann lockerer Lauf am Nachmittag — Leistungshoch, aber kein Qualitätsreiz im Schlafdefizit. Talk-Test!"
+          : s === "v"
+            ? "V-Schicht: nur kurz und locker — enges Zeitfenster, Schlaf hat Vorrang."
+            : "Lockerer Grundlagenlauf (Zone 2) am freien Tag — Talk-Test: ganze Sätze müssen möglich sein.",
         km,
       );
     });

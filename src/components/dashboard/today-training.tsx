@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Activity,
   BedDouble,
   ChevronRight,
   Dumbbell,
@@ -18,6 +19,7 @@ const KIND_ICON = {
   run: Footprints,
   easy: Footprints,
   gym: Dumbbell,
+  mobility: Activity,
   rest: BedDouble,
 } as const;
 
@@ -50,7 +52,7 @@ export function TodayTrainingCard({
           <Icon
             className={cn(
               "size-5 shrink-0",
-              adjusted.kind === "rest"
+              adjusted.kind === "rest" || adjusted.kind === "mobility"
                 ? "text-muted-foreground"
                 : "text-primary",
             )}
