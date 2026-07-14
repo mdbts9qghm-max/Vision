@@ -197,6 +197,42 @@ describe("planWeek — Regelzuordnung", () => {
     ).toBe(false);
   });
 
+  it("V-Schicht: Laufen erlaubt (während der Schicht), aber nie Kraft", () => {
+    // Mo V, Di V, Mi Frei, Do V, Fr Nacht, Sa Nacht, So Schlaf
+    const plan = planWeek(
+      params,
+      WEEK,
+      week(["v", "v", "free", "v", "night", "night", "sleep"]),
+      15,
+    );
+    const byDate = Object.fromEntries(plan.days.map((d) => [d.date, d]));
+    // Kein Gym auf V-Tagen; Kraft weicht auf den Schlaftag aus.
+    for (const d of ["2026-07-13", "2026-07-14", "2026-07-16"]) {
+      expect(byDate[d].kind).not.toBe("gym");
+    }
+    expect(byDate["2026-07-19"].kind).toBe("gym");
+    // Läufe auf V-Tagen sind erlaubt und sagen das auch.
+    const vRun = plan.days.find(
+      (d) => d.kind === "easy" && d.reason.includes("während der Schicht"),
+    );
+    expect(vRun).toBeDefined();
+  });
+
+  it("Startblock: Kraft nie auf V-Schicht", () => {
+    const plan = planStartblockWeek(
+      WEEK,
+      week(["v", "v", "free", "v", "night", "night", "sleep"]),
+      0,
+    );
+    for (const d of plan.days) {
+      if (d.kind === "gym") {
+        expect(["2026-07-13", "2026-07-14", "2026-07-16"]).not.toContain(
+          d.date,
+        );
+      }
+    }
+  });
+
   it("unbekannte Schichten werden nicht verplant", () => {
     const plan = planWeek(params, WEEK, {}, 15);
     expect(plan.days.every((d) => d.kind === "rest")).toBe(true);

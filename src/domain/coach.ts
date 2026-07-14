@@ -232,11 +232,12 @@ export function planStartblockWeek(
     });
   });
 
-  // Kraft/Stabi: max. 2× an lauffreien Tagen.
+  // Kraft/Stabi: max. 2× an lauffreien Tagen — nie auf V-Schicht
+  // (dort ist nur Laufen während der Schicht möglich).
   let gym = 0;
   for (const d of dates) {
     if (gym >= 2) break;
-    if (days.has(d) || score(d) === 0) continue;
+    if (days.has(d) || score(d) === 0 || shiftOf(d) === "v") continue;
     claim({
       date: d,
       kind: "gym",
@@ -394,9 +395,9 @@ export function planWeek(
   const gymOk = (d: string) =>
     longRunDay === undefined ||
     (d !== longRunDay && d !== addDaysISO(longRunDay, 1));
+  // V-Schicht: nur Laufen (während der Schicht) möglich — kein Gym.
   const gymPriority = (d: string): number => {
     const s = shiftOf(d);
-    if (s === "v") return 2;
     if (s === "free" || s === "sleep") return 1;
     return 0;
   };
@@ -414,11 +415,9 @@ export function planWeek(
     claim(
       d,
       "gym",
-      s === "v"
-        ? "Kurze Krafteinheit nach der Schicht (30–45 min): hintere Kette, einbeinig, Rumpf. Kraft stört den Schlaf weniger als Intervalle."
-        : s === "sleep"
-          ? "Erst nachschlafen, dann Krafteinheit am Nachmittag — mit Abstand zum Long Run."
-          : "Krafteinheit am freien Tag — mit Abstand zum Long Run.",
+      s === "sleep"
+        ? "Erst nachschlafen, dann Krafteinheit am Nachmittag (30–45 min): hintere Kette, einbeinig, Rumpf — mit Abstand zum Long Run."
+        : "Krafteinheit am freien Tag — mit Abstand zum Long Run.",
     );
     gymPlanned++;
   }
@@ -468,7 +467,7 @@ export function planWeek(
         s === "sleep"
           ? "Schlaftag: erst nachschlafen, dann lockerer Lauf am Nachmittag — Leistungshoch, aber kein Qualitätsreiz im Schlafdefizit. Talk-Test!"
           : s === "v"
-            ? "V-Schicht: nur kurz und locker — enges Zeitfenster, Schlaf hat Vorrang."
+            ? "V-Schicht: Laufen geht nur während der Schicht — kurz, ganz locker, Talk-Test. Kein Gym an diesem Tag."
             : "Lockerer Grundlagenlauf (Zone 2) am freien Tag — Talk-Test: ganze Sätze müssen möglich sein.",
         km,
       );
