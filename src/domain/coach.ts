@@ -8,7 +8,8 @@
  * - Kraft auf Tagschicht-Tage oder freie Tage, nie am Long-Run-Tag und
  *   nicht direkt danach (~24 h Trennung).
  * - Lockeres Z2 füllt die restlichen Slots; eine Einheit pro Tag.
- * - Nachtschicht = Ruhe (optional 20–30 min locker vor der Schicht).
+ * - Nachtschicht: 1. Nacht des Blocks = lockerer Lauf am freien Vormittag
+ *   vor dem Vorschlaf (gedeckelt); Folgenächte = Nachholschlaf, Ruhe.
  * - Wochen mit ≥3 Nachtschichten sind Teil-Deloads (km ×0,75, Gym max 2).
  * - Progressive Overload: ×(1+p) pro Woche, Entlastungswoche (×0,7) alle
  *   `deloadEveryWeeks` Wochen; Steigerung nur, wenn die Vorwoche
@@ -30,6 +31,15 @@ export type SessionKind =
 
 const DAY_SHIFT_MOBILITY_REASON =
   "Tagschicht: 12-h-Schicht — Training bringt hier mehr Risiko als Reiz. Höchstens 10–15 min Mobility am Abend.";
+
+const FIRST_NIGHT_RUN_REASON =
+  "Erste Nachtschicht des Blocks: lockerer Lauf am freien Vormittag (~10–12 Uhr), spätestens 2 h vor dem Vorschlaf beenden — danach Nap und Hauptmahlzeit vor der Schicht. Nicht nach dem Nap trainieren.";
+
+const FIRST_NIGHT_REST_REASON =
+  "Erste Nachtschicht des Blocks: heute sind keine Kilometer nötig — Vormittag frei halten, Nachmittags-Nap, Hauptmahlzeit vor der Schicht.";
+
+const FOLLOW_NIGHT_REST_REASON =
+  "Folge-Nachtschicht: kumulierte Schlafschuld — der Vormittag gehört dem Nachholschlaf, nicht dem Training.";
 
 export interface CoachParams {
   weeklyKmBase: number;
@@ -170,6 +180,8 @@ export function planStartblockWeek(
   const shiftOf = (d: string) => shiftByDate[d];
   const days = new Map<string, PlannedDay>();
   const claim = (day: PlannedDay) => days.set(day.date, day);
+  const isFirstNight = (d: string) =>
+    shiftOf(d) === "night" && shiftOf(addDaysISO(d, -1)) !== "night";
 
   for (const d of dates) {
     const s = shiftOf(d);
@@ -180,13 +192,12 @@ export function planStartblockWeek(
         optional: false,
         reason: "Schicht unbekannt — bitte eintragen, dann plane ich den Tag.",
       });
-    } else if (s === "night") {
+    } else if (s === "night" && !isFirstNight(d)) {
       claim({
         date: d,
         kind: "rest",
-        optional: true,
-        reason:
-          "Nachtschicht: zirkadianes Tief + Schlafschuld. Nachmittags-Nap; Training hat heute frei.",
+        optional: false,
+        reason: FOLLOW_NIGHT_REST_REASON,
       });
     } else if (s === "day") {
       claim({
@@ -199,10 +210,12 @@ export function planStartblockWeek(
   }
 
   // Lauf-Tage: beste Slots, nie zwei Läufe an aufeinanderfolgenden Tagen.
+  // Die erste Nacht eines Blocks ist ein möglicher Vormittags-Slot.
   const score = (d: string): number => {
     const s = shiftOf(d);
     if (s === "free") return 4;
     if (s === "sleep") return 3;
+    if (s === "night" && isFirstNight(d)) return 1;
     if (s === "v") return 1;
     return 0;
   };
@@ -228,16 +241,26 @@ export function planStartblockWeek(
       kind: isLongest ? "longrun" : "easy",
       targetMin: minutes,
       optional: false,
-      reason: `${spec.structure}. Talk-Test: ganze Sätze müssen möglich sein — Gehen in Zone 1 ist vollwertiges Training.`,
+      reason: `${spec.structure}. Talk-Test: ganze Sätze müssen möglich sein — Gehen in Zone 1 ist vollwertiges Training.${
+        shiftOf(day) === "night"
+          ? " Erste Nachtschicht: am freien Vormittag laufen (~10–12 Uhr), 2 h vor dem Nap beenden."
+          : ""
+      }`,
     });
   });
 
   // Kraft/Stabi: max. 2× an lauffreien Tagen — nie auf V-Schicht
-  // (dort ist nur Laufen während der Schicht möglich).
+  // (nur Laufen möglich) und nie vor einer Nachtschicht.
   let gym = 0;
   for (const d of dates) {
     if (gym >= 2) break;
-    if (days.has(d) || score(d) === 0 || shiftOf(d) === "v") continue;
+    if (
+      days.has(d) ||
+      score(d) === 0 ||
+      shiftOf(d) === "v" ||
+      shiftOf(d) === "night"
+    )
+      continue;
     claim({
       date: d,
       kind: "gym",
@@ -255,7 +278,9 @@ export function planStartblockWeek(
       kind: "rest",
       optional: false,
       reason:
-        "Ruhetag — die Anpassung passiert in der Erholung, nicht im Training.",
+        shiftOf(d) === "night"
+          ? FIRST_NIGHT_REST_REASON
+          : "Ruhetag — die Anpassung passiert in der Erholung, nicht im Training.",
     });
   }
 
@@ -307,20 +332,17 @@ export function planWeek(
     });
   };
 
-  // 1) Fixe Tage: Nachtschichten, Tagschichten (nur Mobility) und
-  //    unbekannte Schichten.
+  // 1) Fixe Tage: Folge-Nachtschichten (Nachholschlaf), Tagschichten
+  //    (nur Mobility) und unbekannte Schichten. Die ERSTE Nacht eines
+  //    Blocks bleibt frei — ihr Vormittag ist ein lockerer Lauf-Slot.
+  const isFirstNight = (d: string) =>
+    shiftOf(d) === "night" && shiftOf(addDaysISO(d, -1)) !== "night";
   for (const d of dates) {
     const s = shiftOf(d);
     if (s === undefined) {
       claim(d, "rest", "Schicht unbekannt — bitte eintragen, dann plane ich den Tag.");
-    } else if (s === "night") {
-      claim(
-        d,
-        "rest",
-        "Nachtschicht: zirkadianes Tief + Schlafschuld. Nachmittags-Nap; optional 20–30 min ganz locker vor der Schicht.",
-        undefined,
-        true,
-      );
+    } else if (s === "night" && !isFirstNight(d)) {
+      claim(d, "rest", FOLLOW_NIGHT_REST_REASON);
     } else if (s === "day") {
       claim(d, "mobility", DAY_SHIFT_MOBILITY_REASON, undefined, true);
     }
@@ -428,6 +450,7 @@ export function planWeek(
     const s = shiftOf(d);
     if (s === "free") return 3;
     if (s === "sleep") return 2;
+    if (s === "night" && isFirstNight(d)) return 1; // Vormittag vor dem Nap
     if (s === "v") return 0.5;
     return 0;
   };
@@ -459,17 +482,23 @@ export function planWeek(
           ? remainingKm - round1(perDay) * (runDays.length - 1)
           : perDay,
       );
-      if (km < 2) return;
+      // Vormittagslauf vor der ersten Nacht bleibt bewusst kurz (locker,
+      // 2 h vor dem Nap beendet) — nie das Sammelbecken für Rest-km.
+      const km2 =
+        s === "night" ? Math.min(km, round1(weekKm * 0.25)) : km;
+      if (km2 < 2) return;
       const isModerate = s === "free" || s === "sleep";
       claim(
         d,
         isModerate ? "run" : "easy",
         s === "sleep"
           ? "Schlaftag: erst nachschlafen, dann lockerer Lauf am Nachmittag — Leistungshoch, aber kein Qualitätsreiz im Schlafdefizit. Talk-Test!"
-          : s === "v"
-            ? "V-Schicht: Laufen geht nur während der Schicht — kurz, ganz locker, Talk-Test. Kein Gym an diesem Tag."
-            : "Lockerer Grundlagenlauf (Zone 2) am freien Tag — Talk-Test: ganze Sätze müssen möglich sein.",
-        km,
+          : s === "night"
+            ? FIRST_NIGHT_RUN_REASON
+            : s === "v"
+              ? "V-Schicht: Laufen geht nur während der Schicht — kurz, ganz locker, Talk-Test. Kein Gym an diesem Tag."
+              : "Lockerer Grundlagenlauf (Zone 2) am freien Tag — Talk-Test: ganze Sätze müssen möglich sein.",
+        km2,
       );
     });
   }
@@ -482,7 +511,9 @@ export function planWeek(
       "rest",
       s === "sleep"
         ? "Ruhetag: Schlaf nachholen ist heute das Training."
-        : `Ruhetag (${s ? SHIFT_LABEL[s] : "—"}) — Erholung ist Teil des Plans.`,
+        : s === "night"
+          ? FIRST_NIGHT_REST_REASON
+          : `Ruhetag (${s ? SHIFT_LABEL[s] : "—"}) — Erholung ist Teil des Plans.`,
     );
   }
 

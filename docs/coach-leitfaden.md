@@ -38,9 +38,14 @@ Sprint — lange ruhige Läufe gehen auch morgens.
 
 - **Tagschicht (07–19 Uhr):** Fenster belegt. Kurz/locker früh **oder** Kraft
   nach der Schicht (Kraft stört den Schlaf weniger als harte Intervalle).
-- **Nachtschicht (19–07 Uhr):** Schlechtester Tag. Nachmittags-Nap; optional
-  lockere Einheit 16–18 Uhr vor der Schicht. Während/nach der Schicht kein
-  Training. Nachtschicht-Blöcke sind **Erhaltungs-, keine Aufbauphasen**.
+- **Nachtschicht (19–07 Uhr, Vorschlaf ~14–17 Uhr):** Schlechtester Tag für
+  Qualität. **Nicht nach dem Vorschlaf trainieren** (Schlafträgheit,
+  Erregung vor der 12-h-Schicht, Zeit für Hauptmahlzeit + Anfahrt).
+  **Besser: am freien Vormittag vor dem Vorschlaf** (locker bis moderat,
+  ~10–12 Uhr, **~2 h vor dem Nap beenden**). Das gilt **nur für die erste
+  Nacht eines Blocks** — bei Folgenächten gehört der Vormittag dem
+  **Nachholschlaf** (Ruhe/Erhalt). Während/nach der Schicht kein Training.
+  Nachtschicht-Blöcke sind **Erhaltungs-, keine Aufbauphasen**.
 - **Schlaftag (Schlaf 08–14 Uhr):** Nur ~6 h Tagschlaf = Defizit. Nachmittag =
   Leistungshoch, aber: lockerer bis moderater Lauf, **keine Maximalqualität**;
   Schlaf verlängern.
@@ -109,7 +114,8 @@ Nacht-Toleranz fürs Rennen — trotzdem gezielt Müdigkeitsläufe im Aufbau.
 | **Schlaftag** | Hoch, aber Schlafdefizit | Moderater Lauf; Schlaf nachholen; keine Maximalqualität |
 | **Tagschicht** | Fenster belegt | Kurz/locker früh **oder** Kraft nach Schicht |
 | **V-Schicht** | Fenster belegt (spät) | Kurz/locker früh **oder** locker ab ~20:30 |
-| **Nachtschicht** | zirkadianes Tief | Nap + optional locker vorher; sonst **Ruhe/Erhalt** |
+| **Nachtschicht (1. Nacht)** | zirkadianes Tief + Schlafschuld | Locker/moderat **vormittags vor dem Vorschlaf** (~10–12 Uhr, 2 h Abstand zum Nap) |
+| **Nachtschicht (Folgenächte)** | kumulierte Schlafschuld | **Ruhe/Erhalt** — Vormittag für Nachholschlaf |
 
 ## Zusammenfassung in einem Satz
 

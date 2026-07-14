@@ -72,7 +72,12 @@ async function regenerate(): Promise<void> {
   const today = todayISO();
   const currentWeek = weekStartISO(today);
   const horizon = addDaysISO(today, 13);
-  const shiftMap = await getShiftMap(currentWeek, addDaysISO(currentWeek, 20));
+  // Einen Tag vor Wochenstart mitladen: die Erste-Nacht-Erkennung braucht
+  // den Vortag (Folge-Nacht über die Wochengrenze).
+  const shiftMap = await getShiftMap(
+    addDaysISO(currentWeek, -1),
+    addDaysISO(currentWeek, 20),
+  );
 
   // Vorwoche als Progressions-Basis.
   const prevWeek = addDaysISO(currentWeek, -7);

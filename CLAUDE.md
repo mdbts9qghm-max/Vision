@@ -115,6 +115,8 @@ Run-Walk nach Minuten und Ruhetag zwischen Läufen → Basis ≤38 km → Ausbau
 Nachtschicht-Teil-Deload, Back-to-Back-Long-Runs ab 40 km/Woche,
 Tagschicht = kein Training (nur optionale Mobility — Owner-Regel 07/2026),
 V-Schicht = nur Laufen während der Schicht, nie Kraft (Owner-Regel 07/2026),
+Nachtschicht differenziert: 1. Nacht des Blocks = lockerer Lauf am Vormittag
+vor dem Vorschlaf (gedeckelt ~25 % Wochen-km), Folgenächte = Nachholschlaf,
 Autoregulation (Schlaf <6 h + Check-in „platt“: ≥2 Signale → Ruhe, 1 Signal
 → Umfang ×0,6), Heute-Empfehlung auf dem Dashboard, km-Tracking im
 Trainings-Log. Offen: Renndatum-Periodisierung + Tapering (sobald ein

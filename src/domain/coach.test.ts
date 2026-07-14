@@ -120,8 +120,15 @@ describe("planWeek — Regelzuordnung", () => {
     expect(byKind["2026-07-13"]).toBe("mobility"); // Tagschicht
     expect(byKind["2026-07-14"]).toBe("mobility");
     expect(byKind["2026-07-16"]).toBe("mobility");
-    expect(byKind["2026-07-17"]).toBe("rest"); // Nacht
-    expect(byKind["2026-07-18"]).toBe("rest"); // Nacht
+    // Fr = erste Nacht des Blocks → kurzer Vormittagslauf, gedeckelt.
+    const firstNight = plan.days.find((d) => d.date === "2026-07-17");
+    expect(firstNight?.kind).toBe("easy");
+    expect(firstNight?.reason).toContain("Vormittag");
+    expect(firstNight?.targetKm).toBeLessThanOrEqual(3.8); // ≈25 % gerundet
+    // Sa = Folge-Nacht → Nachholschlaf.
+    const followNight = plan.days.find((d) => d.date === "2026-07-18");
+    expect(followNight?.kind).toBe("rest");
+    expect(followNight?.reason).toContain("Nachholschlaf");
     expect(byKind["2026-07-19"]).toBe("gym"); // Schlaftag als einziger Kraft-Slot
     // Kein Lauf auf einer Tagschicht
     expect(
@@ -139,8 +146,8 @@ describe("planWeek — Regelzuordnung", () => {
       15,
     );
     const km = plan.days.reduce((s, d) => s + (d.targetKm ?? 0), 0);
-    // Nur die Freischicht ist lauffähig → nur der Long Run (35 %).
-    expect(km).toBeCloseTo(5.3);
+    // Long Run (35 %) + gedeckelter Erste-Nacht-Lauf (25 %) — mehr geht nicht.
+    expect(km).toBeCloseTo(5.3 + 3.8);
   });
 
   it("ohne Freischicht: moderater Long Run auf dem Schlaftag, gedeckelt", () => {
