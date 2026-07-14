@@ -240,6 +240,46 @@ describe("planWeek — Regelzuordnung", () => {
     }
   });
 
+  it("nie 3 Lauftage in Folge, höchstens eine Zweier-Folge pro Woche", () => {
+    // Ausbauphase, ganze Woche frei — maximale Slot-Konkurrenz.
+    const plan = planWeek(
+      params,
+      WEEK,
+      week(["free", "free", "free", "free", "free", "free", "free"]),
+      30,
+      "ausbau",
+    );
+    const runFlags = plan.days.map(
+      (d) => d.kind === "longrun" || d.kind === "run" || d.kind === "easy",
+    );
+    let pairs = 0;
+    for (let i = 0; i < 7; i++) {
+      if (runFlags[i] && runFlags[i + 1]) {
+        pairs++;
+        expect(runFlags[i + 2] ?? false).toBe(false); // keine 3er-Kette
+      }
+    }
+    expect(pairs).toBeLessThanOrEqual(1);
+  });
+
+  it("Back-to-Back verbraucht die erlaubte Zweier-Folge", () => {
+    const plan = planWeek(
+      params,
+      WEEK,
+      week(["free", "free", "free", "free", "free", "free", "free"]),
+      44,
+      "ultra",
+    );
+    const runFlags = plan.days.map(
+      (d) => d.kind === "longrun" || d.kind === "run" || d.kind === "easy",
+    );
+    let pairs = 0;
+    for (let i = 0; i < 7; i++) {
+      if (runFlags[i] && runFlags[i + 1]) pairs++;
+    }
+    expect(pairs).toBe(1); // nur LR + B2B, sonst nichts hintereinander
+  });
+
   it("unbekannte Schichten werden nicht verplant", () => {
     const plan = planWeek(params, WEEK, {}, 15);
     expect(plan.days.every((d) => d.kind === "rest")).toBe(true);

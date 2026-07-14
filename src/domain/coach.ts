@@ -454,25 +454,37 @@ export function planWeek(
     if (s === "v") return 0.5;
     return 0;
   };
-  // In der Basisphase gilt: mindestens ein Ruhetag zwischen den Läufen.
+  // So wenige Lauftage wie möglich hintereinander: nie 3 in Folge, und
+  // höchstens EINE Zweier-Folge pro Woche (Back-to-Back zählt als diese).
+  // Basisphase bleibt strenger: immer ein Ruhetag zwischen den Läufen.
   const isRunClaimed = (d: string) => {
     const k = days.get(d)?.kind;
     return k === "longrun" || k === "run" || k === "easy";
   };
   const chosenRunDays: string[] = [];
+  const isRun = (d: string) => isRunClaimed(d) || chosenRunDays.includes(d);
+  const pairBudget = phase === "basis" ? 0 : 1;
+  let adjacentPairsUsed = b2bKm > 0 ? 1 : 0;
+  const maxRuns = remainingKm >= 12 ? 3 : 2;
   const runDays = available()
     .filter((d) => runPriority(d) > 0)
     .sort((a, b) => runPriority(b) - runPriority(a))
     .filter((d) => {
-      if (phase !== "basis") return true;
-      const adjacent = [addDaysISO(d, -1), addDaysISO(d, 1)];
-      if (adjacent.some((n) => isRunClaimed(n) || chosenRunDays.includes(n))) {
-        return false;
+      if (chosenRunDays.length >= maxRuns) return false;
+      const prev = addDaysISO(d, -1);
+      const next = addDaysISO(d, 1);
+      const adjCount = (isRun(prev) ? 1 : 0) + (isRun(next) ? 1 : 0);
+      if (adjCount >= 2) return false; // würde 3 Lauftage in Folge
+      if (adjCount === 1) {
+        // Kette über den Nachbarn hinaus prüfen (3er-Folge verhindern).
+        const beyond = isRun(prev) ? addDaysISO(prev, -1) : addDaysISO(next, 1);
+        if (isRun(beyond)) return false;
+        if (adjacentPairsUsed >= pairBudget) return false;
+        adjacentPairsUsed++;
       }
       chosenRunDays.push(d);
       return true;
-    })
-    .slice(0, remainingKm >= 12 ? 3 : 2);
+    });
   if (runDays.length > 0 && remainingKm >= 3) {
     const perDay = remainingKm / runDays.length;
     runDays.forEach((d, i) => {
