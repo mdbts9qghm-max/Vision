@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   baseTargetKm,
   effectiveTargetKm,
+  phaseForWeek,
+  planStartblockWeek,
   planWeek,
   type CoachParams,
   type ShiftType,
@@ -25,15 +27,69 @@ const week = (types: (ShiftType | undefined)[]) => {
   return map;
 };
 
-describe("baseTargetKm — Progression + Deload", () => {
-  it("steigert ×1,07 pro Woche, jede 4. Woche Entlastung ×0,7", () => {
-    expect(baseTargetKm(params, 0)).toBe(15);
-    expect(baseTargetKm(params, 1)).toBe(16.1); // 15·1,07
-    expect(baseTargetKm(params, 2)).toBe(17.2); // 15·1,07²
-    expect(baseTargetKm(params, 3)).toBe(12); // Deload: 17,2·0,7
-    expect(baseTargetKm(params, 4)).toBe(18.4); // weiter von 17,2·1,07
+describe("phaseForWeek", () => {
+  it("Startblock W1–6, Basis bis M3, Ausbau M4–6, Ultra ab M7", () => {
+    expect(phaseForWeek(0)).toBe("startblock");
+    expect(phaseForWeek(5)).toBe("startblock");
+    expect(phaseForWeek(6)).toBe("basis");
+    expect(phaseForWeek(13)).toBe("ausbau");
+    expect(phaseForWeek(26)).toBe("ultra");
   });
 });
+
+describe("baseTargetKm — Progression + Deload ab Ende Startblock", () => {
+  it("steigert ×1,07 pro km-Woche, jede 4. Entlastung ×0,7", () => {
+    expect(baseTargetKm(params, 6)).toBe(15); // erste km-Woche
+    expect(baseTargetKm(params, 7)).toBe(16.1); // 15·1,07
+    expect(baseTargetKm(params, 8)).toBe(17.2); // 15·1,07²
+    expect(baseTargetKm(params, 9)).toBe(12); // Deload: 17,2·0,7
+    expect(baseTargetKm(params, 10)).toBe(18.4); // weiter von 17,2·1,07
+  });
+
+  it("deckelt auf den Phasen-Umfang (Basis: 38 km)", () => {
+    // Sehr hohe Basis → sofort am Deckel der Basisphase.
+    const big = { ...params, weeklyKmBase: 60 };
+    expect(baseTargetKm(big, 7)).toBe(38);
+  });
+});
+
+describe("planStartblockWeek — Run-Walk nach Minuten", () => {
+  const shifts = week(["day", "day", "free", "day", "night", "night", "sleep"]);
+
+  it("Woche 1: 3× 20 Min. mit 2/2-Struktur und Ruhetag dazwischen", () => {
+    const plan = planStartblockWeek(WEEK, shifts, 0);
+    const runs = plan.days.filter((d) => d.targetMin !== undefined);
+    expect(runs).toHaveLength(3);
+    expect(runs.every((r) => r.targetMin === 20)).toBe(true);
+    expect(runs[0].reason).toContain("2 Min. laufen / 2 Min. gehen");
+    // kein Lauf an aufeinanderfolgenden Tagen
+    const dates = runs.map((r) => r.date).sort();
+    for (let i = 1; i < dates.length; i++) {
+      expect(dates[i] > dates[i - 1]).toBe(true);
+      expect(dates[i]).not.toBe(addDay(dates[i - 1]));
+    }
+  });
+
+  it("Woche 5: längste Einheit (40 Min.) liegt auf der Freischicht", () => {
+    const plan = planStartblockWeek(WEEK, shifts, 4);
+    const long = plan.days.find((d) => d.kind === "longrun");
+    expect(long?.targetMin).toBe(40);
+    expect(long?.date).toBe("2026-07-15"); // Freischicht
+  });
+
+  it("Kraft max. 2× an lauffreien Tagen, Nacht bleibt frei", () => {
+    const plan = planStartblockWeek(WEEK, shifts, 2);
+    expect(
+      plan.days.filter((d) => d.kind === "gym").length,
+    ).toBeLessThanOrEqual(2);
+    expect(plan.days[4].kind).toBe("rest"); // Nachtschicht
+  });
+});
+
+function addDay(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+}
 
 describe("effectiveTargetKm — Steigerung nur bei Umsetzung", () => {
   it("wiederholt die Vorwoche, wenn <60 % umgesetzt", () => {

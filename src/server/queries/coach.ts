@@ -45,19 +45,25 @@ export async function getPlanRange(
 export interface WeekActuals {
   km: number;
   gymCount: number;
+  runCount: number;
 }
 
-/** Tatsächlich gelaufene km + Kraft-Einheiten in der Woche ab `weekStart`. */
+/** Tatsächliche km, Läufe und Kraft-Einheiten in der Woche ab `weekStart`. */
 export async function getWeekActuals(weekStart: string): Promise<WeekActuals> {
   const weekEnd = addDaysISO(weekStart, 6);
   const [row] = await db
     .select({
       km: sql<number>`coalesce(sum(${workouts.distanceKm}), 0)`,
       gymCount: sql<number>`sum(case when ${workouts.type} = 'Kraft' then 1 else 0 end)`,
+      runCount: sql<number>`sum(case when ${workouts.type} = 'Kraft' then 0 else 1 end)`,
     })
     .from(workouts)
     .where(and(gte(workouts.date, weekStart), lte(workouts.date, weekEnd)));
-  return { km: row?.km ?? 0, gymCount: row?.gymCount ?? 0 };
+  return {
+    km: row?.km ?? 0,
+    gymCount: row?.gymCount ?? 0,
+    runCount: row?.runCount ?? 0,
+  };
 }
 
 /** Summe der geplanten km einer Woche (gespeicherter Plan). */

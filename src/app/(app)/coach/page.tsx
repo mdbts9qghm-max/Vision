@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { addDaysISO, todayISO, weekStartISO } from "@/domain/dates";
+import { addDaysISO, diffDaysISO, todayISO, weekStartISO } from "@/domain/dates";
+import { PHASE_LABEL, phaseForWeek } from "@/domain/coach";
 import {
   getOrCreateCoachSettings,
   getPlanRange,
@@ -36,16 +37,35 @@ export default async function CoachPage() {
   const sessionByDate = new Map(plan.map((s) => [s.date, s]));
   const days = Array.from({ length: 14 }, (_, i) => addDaysISO(today, i));
   const missingShifts = days.filter((d) => !shiftMap[d]).length;
-  const kmRatio =
-    weekPlannedKm > 0 ? Math.min(weekActuals.km / weekPlannedKm, 1) : 0;
+
+  const weekIndex = Math.max(
+    Math.round(diffDaysISO(settings.startWeek, currentWeek) / 7),
+    0,
+  );
+  const phase = phaseForWeek(weekIndex);
+  const isStartblock = phase === "startblock";
+  const plannedRuns = plan.filter(
+    (s) =>
+      s.date >= currentWeek &&
+      s.date <= addDaysISO(currentWeek, 6) &&
+      (s.kind === "longrun" || s.kind === "run" || s.kind === "easy"),
+  ).length;
+  const runTarget = isStartblock ? 3 : plannedRuns;
+  const ratio = isStartblock
+    ? Math.min(weekActuals.runCount / Math.max(runTarget, 1), 1)
+    : weekPlannedKm > 0
+      ? Math.min(weekActuals.km / weekPlannedKm, 1)
+      : 0;
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">Coach</h1>
         <p className="text-sm text-muted-foreground">
-          Basis {settings.weeklyKmBase} km/Woche · +{settings.progressionPct} %
-          Progression · Deload alle {settings.deloadEveryWeeks} Wochen
+          Woche {weekIndex + 1} · Phase: {PHASE_LABEL[phase]}
+          {isStartblock
+            ? " · Ziel: nach 6 Wochen 30 Min. am Stück laufen"
+            : ` · +${settings.progressionPct} % Progression, Deload alle ${settings.deloadEveryWeeks} Wochen`}
         </p>
       </header>
 
@@ -54,25 +74,33 @@ export default async function CoachPage() {
           <div className="flex items-baseline justify-between text-sm">
             <span className="font-medium">Diese Woche</span>
             <span className="text-muted-foreground">
-              {Math.round(weekActuals.km * 10) / 10}/{weekPlannedKm} km · Kraft{" "}
-              {weekActuals.gymCount}×
+              {isStartblock
+                ? `Läufe ${weekActuals.runCount}/${runTarget} · Kraft ${weekActuals.gymCount}×`
+                : `${Math.round(weekActuals.km * 10) / 10}/${weekPlannedKm} km · Kraft ${weekActuals.gymCount}×`}
             </span>
           </div>
           <div
             role="progressbar"
-            aria-valuenow={Math.round(weekActuals.km)}
+            aria-valuenow={
+              isStartblock ? weekActuals.runCount : Math.round(weekActuals.km)
+            }
             aria-valuemin={0}
-            aria-valuemax={Math.max(Math.round(weekPlannedKm), 1)}
+            aria-valuemax={
+              isStartblock
+                ? Math.max(runTarget, 1)
+                : Math.max(Math.round(weekPlannedKm), 1)
+            }
             className="h-2 overflow-hidden rounded-full bg-muted"
           >
             <div
               className="h-full rounded-full bg-primary transition-[width] duration-500"
-              style={{ width: `${kmRatio * 100}%` }}
+              style={{ width: `${ratio * 100}%` }}
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Kilometer zählen aus dem Trainings-Log (Distanz-Feld beim Loggen
-            ausfüllen).
+            {isStartblock
+              ? "Run-Walk zählt voll: jede geloggte Einheit (außer Kraft) ist ein Lauf. Zone 3+ ist tabu — Talk-Test."
+              : "Kilometer zählen aus dem Trainings-Log (Distanz-Feld beim Loggen ausfüllen)."}
           </p>
         </CardContent>
       </Card>

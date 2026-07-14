@@ -10,6 +10,8 @@ import { addDaysISO, diffDaysISO, isValidISODate, todayISO, weekStartISO } from 
 import {
   baseTargetKm,
   effectiveTargetKm,
+  phaseForWeek,
+  planStartblockWeek,
   planWeek,
   type CoachParams,
 } from "@/domain/coach";
@@ -90,21 +92,28 @@ async function regenerate(): Promise<void> {
     weekStart = addDaysISO(weekStart, 7)
   ) {
     const idx = weekIndexOf(weekStart);
-    let target = baseTargetKm(params, idx);
-    if (weekStart === currentWeek) {
-      target = effectiveTargetKm(
-        target,
-        prevWeekPlannedKm,
-        prevPlanned > 0 ? prevActuals.km : null,
-      );
+    const phase = phaseForWeek(idx);
+    let plan;
+    if (phase === "startblock") {
+      plan = planStartblockWeek(weekStart, shiftMap, idx);
+    } else {
+      let target = baseTargetKm(params, idx);
+      if (weekStart === currentWeek) {
+        target = effectiveTargetKm(
+          target,
+          prevWeekPlannedKm,
+          prevPlanned > 0 ? prevActuals.km : null,
+        );
+      }
+      plan = planWeek(params, weekStart, shiftMap, target, phase);
     }
-    const plan = planWeek(params, weekStart, shiftMap, target);
     for (const day of plan.days) {
       if (day.date < today || day.date > horizon) continue;
       rows.push({
         date: day.date,
         kind: day.kind,
         targetKm: day.targetKm ?? null,
+        targetMin: day.targetMin ?? null,
         optional: day.optional,
         reason: day.reason,
       });

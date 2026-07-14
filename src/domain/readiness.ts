@@ -22,6 +22,7 @@ export interface DaySignals {
 export interface SessionAdjustment {
   kind: SessionKind;
   targetKm?: number;
+  targetMin?: number;
   /** Hinweis, warum angepasst wurde — null, wenn der Plan unverändert gilt. */
   note: string | null;
 }
@@ -34,12 +35,17 @@ export function warningSignals(signals: DaySignals): number {
 }
 
 export function adjustSession(
-  session: { kind: SessionKind; targetKm?: number | null },
+  session: {
+    kind: SessionKind;
+    targetKm?: number | null;
+    targetMin?: number | null;
+  },
   signals: DaySignals,
 ): SessionAdjustment {
   const kind = session.kind;
   const targetKm = session.targetKm ?? undefined;
-  if (kind === "rest") return { kind, targetKm, note: null };
+  const targetMin = session.targetMin ?? undefined;
+  if (kind === "rest") return { kind, targetKm, targetMin, note: null };
 
   const warnings = warningSignals(signals);
   if (warnings >= 2) {
@@ -57,20 +63,26 @@ export function adjustSession(
       return {
         kind,
         targetKm,
+        targetMin,
         note: `Autoregulation (${reason}): Kraft nur leicht — weniger Gewicht, keine neuen Reize.`,
       };
     }
-    const reduced =
+    const reducedKm =
       targetKm !== undefined ? Math.max(round1(targetKm * 0.6), 2) : undefined;
+    const reducedMin =
+      targetMin !== undefined
+        ? Math.max(Math.round(targetMin * 0.6), 15)
+        : undefined;
     return {
       kind: kind === "longrun" ? "run" : kind,
-      targetKm: reduced,
+      targetKm: reducedKm,
+      targetMin: reducedMin,
       note: `Autoregulation (${reason}): Umfang reduziert${
         kind === "longrun" ? ", Long Run wird moderater Lauf" : ""
       } — ganz locker bleiben.`,
     };
   }
-  return { kind, targetKm, note: null };
+  return { kind, targetKm, targetMin, note: null };
 }
 
 function round1(v: number): number {

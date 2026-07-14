@@ -40,7 +40,8 @@ export function TodayTrainingCard({
   const wasAdjusted = adjusted.note !== null;
   const kindChanged =
     adjusted.kind !== session.kind ||
-    (adjusted.targetKm ?? null) !== (session.targetKm ?? null);
+    (adjusted.targetKm ?? null) !== (session.targetKm ?? null) ||
+    (adjusted.targetMin ?? null) !== (session.targetMin ?? null);
 
   return (
     <Link href="/coach" className="block">
@@ -58,13 +59,21 @@ export function TodayTrainingCard({
           <div className="min-w-0 flex-1 space-y-0.5">
             <p className="text-sm font-medium">
               {SESSION_KIND_LABEL[adjusted.kind]}
-              {isRun && adjusted.targetKm ? ` · ${adjusted.targetKm} km` : ""}
+              {isRun && adjusted.targetMin
+                ? ` · ${adjusted.targetMin} Min.`
+                : isRun && adjusted.targetKm
+                  ? ` · ${adjusted.targetKm} km`
+                  : ""}
               {session.optional && !wasAdjusted ? " (optional)" : ""}
               {wasAdjusted && kindChanged ? (
                 <span className="text-muted-foreground">
                   {" "}
                   (statt {SESSION_KIND_LABEL[session.kind]}
-                  {session.targetKm ? ` ${session.targetKm} km` : ""})
+                  {session.targetMin
+                    ? ` ${session.targetMin} Min.`
+                    : session.targetKm
+                      ? ` ${session.targetKm} km`
+                      : ""})
                 </span>
               ) : null}
             </p>

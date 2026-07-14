@@ -52,7 +52,11 @@ export function PlanDay({
             <div className="min-w-0">
               <p className="text-sm">
                 <span className="font-medium">{SESSION_KIND_LABEL[kind]}</span>
-                {isRun && session.targetKm ? ` · ${session.targetKm} km` : ""}
+                {isRun && session.targetMin
+                  ? ` · ${session.targetMin} Min.`
+                  : isRun && session.targetKm
+                    ? ` · ${session.targetKm} km`
+                    : ""}
                 {session.optional ? " (optional)" : ""}
               </p>
               <p className="text-xs text-muted-foreground">{session.reason}</p>

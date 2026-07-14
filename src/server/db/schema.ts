@@ -125,6 +125,7 @@ export const plannedSessions = sqliteTable("planned_sessions", {
   kind: text("kind", { enum: ["longrun", "run", "easy", "gym", "rest"] })
     .notNull(),
   targetKm: real("target_km"),
+  targetMin: integer("target_min"), // Startblock: Dauer statt Distanz
   optional: integer("optional", { mode: "boolean" }).notNull().default(false),
   reason: text("reason").notNull(), // Begründung aus den Planungsregeln
   createdAt: createdAt(),

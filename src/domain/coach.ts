@@ -33,9 +33,40 @@ export interface PlannedDay {
   date: string;
   kind: SessionKind;
   targetKm?: number;
+  targetMin?: number;
   optional: boolean;
   reason: string;
 }
+
+/**
+ * Jahresphasen (Aufbauplan „Von 0 auf 100 km“):
+ * Startblock W1–6 (Run-Walk nach Minuten), Basis bis Monat 3,
+ * Ausbau Monat 4–6, Ultra-spezifisch ab Monat 7. Tapering folgt mit
+ * Renndatum-Periodisierung.
+ */
+export type Phase = "startblock" | "basis" | "ausbau" | "ultra";
+
+export function phaseForWeek(weekIndex: number): Phase {
+  if (weekIndex < 6) return "startblock";
+  if (weekIndex < 13) return "basis";
+  if (weekIndex < 26) return "ausbau";
+  return "ultra";
+}
+
+export const PHASE_LABEL: Record<Phase, string> = {
+  startblock: "Startblock (Run-Walk)",
+  basis: "Basis",
+  ausbau: "Ausbau",
+  ultra: "Ultra-spezifisch",
+};
+
+/** Umfangsdeckel pro Phase (km/Woche) — Progression läuft nie darüber. */
+const PHASE_KM_CAP: Record<Phase, number> = {
+  startblock: 0, // nicht km-basiert
+  basis: 38,
+  ausbau: 60,
+  ultra: 80,
+};
 
 export interface WeekPlan {
   targetKm: number;
@@ -52,16 +83,22 @@ const SHIFT_LABEL: Record<ShiftType, string> = {
   v: "V-Schicht",
 };
 
-/** Basis-Wochenziel nach Formel: Progression + zyklischer Deload. */
+/**
+ * Basis-Wochenziel nach Formel: Progression + zyklischer Deload,
+ * gedeckelt auf den Phasen-Umfang. Der km-Aufbau beginnt nach dem
+ * Startblock (weekIndex 6 = erste km-Woche mit der Basis).
+ */
 export function baseTargetKm(params: CoachParams, weekIndex: number): number {
   const growth = 1 + params.progressionPct / 100;
   let lastGrowthTarget = params.weeklyKmBase;
   let target = params.weeklyKmBase;
-  for (let i = 1; i <= weekIndex; i++) {
-    if ((i + 1) % params.deloadEveryWeeks === 0) {
+  for (let i = 7; i <= weekIndex; i++) {
+    const kmWeek = i - 6; // 1-basiert ab der zweiten km-Woche
+    const cap = PHASE_KM_CAP[phaseForWeek(i)];
+    if ((kmWeek + 1) % params.deloadEveryWeeks === 0) {
       target = lastGrowthTarget * 0.7; // Entlastungswoche
     } else {
-      lastGrowthTarget = lastGrowthTarget * growth;
+      lastGrowthTarget = Math.min(lastGrowthTarget * growth, cap);
       target = lastGrowthTarget;
     }
   }
@@ -90,6 +127,131 @@ export function effectiveTargetKm(
 }
 
 /**
+ * Startblock (Woche 1–6, Aufbauplan Kap. 2): Run-Walk nach Minuten statt
+ * Kilometern. 3 Läufe mit mindestens einem Ruhetag dazwischen, längste
+ * Einheit auf den besten Tag, Kraft max. 2× an lauffreien Tagen.
+ */
+const STARTBLOCK_WEEKS: Array<{
+  runsMin: number[]; // aufsteigend, letzte = längste Einheit
+  structure: string;
+}> = [
+  { runsMin: [20, 20, 20], structure: "2 Min. laufen / 2 Min. gehen" },
+  { runsMin: [25, 25, 25], structure: "3 Min. laufen / 2 Min. gehen" },
+  { runsMin: [30, 30, 30], structure: "4 Min. laufen / 1 Min. gehen" },
+  {
+    runsMin: [20, 20, 20],
+    structure:
+      "3 Min. laufen / 1 Min. gehen — Entlastungswoche, nur Zone 1 bis unteres Zone 2",
+  },
+  { runsMin: [30, 30, 40], structure: "5 Min. laufen / 1 Min. gehen" },
+  {
+    runsMin: [30, 35, 45],
+    structure:
+      "durchgehend laufen, wenn es sich gut anfühlt — den Longrun weiter als Run-Walk",
+  },
+];
+
+export function planStartblockWeek(
+  weekStart: string,
+  shiftByDate: Record<string, ShiftType | undefined>,
+  weekIndex: number, // 0–5
+): WeekPlan {
+  const spec = STARTBLOCK_WEEKS[Math.min(weekIndex, 5)];
+  const dates = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
+  const shiftOf = (d: string) => shiftByDate[d];
+  const days = new Map<string, PlannedDay>();
+  const claim = (day: PlannedDay) => days.set(day.date, day);
+
+  for (const d of dates) {
+    const s = shiftOf(d);
+    if (s === undefined) {
+      claim({
+        date: d,
+        kind: "rest",
+        optional: false,
+        reason: "Schicht unbekannt — bitte eintragen, dann plane ich den Tag.",
+      });
+    } else if (s === "night") {
+      claim({
+        date: d,
+        kind: "rest",
+        optional: true,
+        reason:
+          "Nachtschicht: zirkadianes Tief + Schlafschuld. Nachmittags-Nap; Training hat heute frei.",
+      });
+    }
+  }
+
+  // Lauf-Tage: beste Slots, nie zwei Läufe an aufeinanderfolgenden Tagen.
+  const score = (d: string): number => {
+    const s = shiftOf(d);
+    if (s === "free") return 4;
+    if (s === "sleep") return 3;
+    if (s === "day") return 2;
+    if (s === "v") return 1;
+    return 0;
+  };
+  const isRunDay = (d: string) => {
+    const k = days.get(d)?.kind;
+    return k === "longrun" || k === "run" || k === "easy";
+  };
+  const candidates = dates
+    .filter((d) => !days.has(d) && score(d) > 0)
+    .sort((a, b) => score(b) - score(a));
+  const runsLongestFirst = [...spec.runsMin].sort((a, b) => b - a);
+  runsLongestFirst.forEach((minutes, i) => {
+    const day = candidates.find(
+      (d) =>
+        !days.has(d) &&
+        !isRunDay(addDaysISO(d, -1)) &&
+        !isRunDay(addDaysISO(d, 1)),
+    );
+    if (!day) return; // weniger Slots als Läufe → lieber weglassen als quetschen
+    const isLongest = i === 0 && minutes > Math.min(...spec.runsMin);
+    claim({
+      date: day,
+      kind: isLongest ? "longrun" : "easy",
+      targetMin: minutes,
+      optional: false,
+      reason: `${spec.structure}. Talk-Test: ganze Sätze müssen möglich sein — Gehen in Zone 1 ist vollwertiges Training.`,
+    });
+  });
+
+  // Kraft/Stabi: max. 2× an lauffreien Tagen.
+  let gym = 0;
+  for (const d of dates) {
+    if (gym >= 2) break;
+    if (days.has(d) || score(d) === 0) continue;
+    claim({
+      date: d,
+      kind: "gym",
+      optional: false,
+      reason:
+        "Kraft & Stabi am lauffreien Tag (Rumpf, Hüfte, Waden) — baut die Robustheit auf, der der Bewegungsapparat jetzt hinterherhinkt.",
+    });
+    gym++;
+  }
+
+  for (const d of dates) {
+    if (days.has(d)) continue;
+    claim({
+      date: d,
+      kind: "rest",
+      optional: false,
+      reason:
+        "Ruhetag — die Anpassung passiert in der Erholung, nicht im Training.",
+    });
+  }
+
+  return {
+    targetKm: 0,
+    gymTarget: gym,
+    nightDeload: false,
+    days: dates.map((d) => days.get(d)!),
+  };
+}
+
+/**
  * Plant eine Woche (Mo–So). `shiftByDate` darf Lücken haben — Tage ohne
  * bekannte Schicht werden nicht verplant.
  */
@@ -98,6 +260,7 @@ export function planWeek(
   weekStart: string, // Montag
   shiftByDate: Record<string, ShiftType | undefined>,
   targetKm: number,
+  phase: Phase = "ausbau",
 ): WeekPlan {
   const dates = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
   const shiftOf = (d: string) => shiftByDate[d];
@@ -105,9 +268,10 @@ export function planWeek(
   const nightCount = dates.filter((d) => shiftOf(d) === "night").length;
   const nightDeload = nightCount >= 3;
   const weekKm = round1(nightDeload ? targetKm * 0.75 : targetKm);
+  // Basisphase & Nachtschicht-Wochen: Kraft auf 2× begrenzen.
   const gymTarget = Math.min(
     params.weeklyGymTarget,
-    nightDeload ? 2 : params.weeklyGymTarget,
+    nightDeload || phase === "basis" ? 2 : params.weeklyGymTarget,
   );
 
   const days = new Map<string, PlannedDay>();
@@ -252,9 +416,24 @@ export function planWeek(
     if (s === "v") return 0.5;
     return 0;
   };
+  // In der Basisphase gilt: mindestens ein Ruhetag zwischen den Läufen.
+  const isRunClaimed = (d: string) => {
+    const k = days.get(d)?.kind;
+    return k === "longrun" || k === "run" || k === "easy";
+  };
+  const chosenRunDays: string[] = [];
   const runDays = available()
     .filter((d) => runPriority(d) > 0)
     .sort((a, b) => runPriority(b) - runPriority(a))
+    .filter((d) => {
+      if (phase !== "basis") return true;
+      const adjacent = [addDaysISO(d, -1), addDaysISO(d, 1)];
+      if (adjacent.some((n) => isRunClaimed(n) || chosenRunDays.includes(n))) {
+        return false;
+      }
+      chosenRunDays.push(d);
+      return true;
+    })
     .slice(0, remainingKm >= 12 ? 3 : 2);
   if (runDays.length > 0 && remainingKm >= 3) {
     const perDay = remainingKm / runDays.length;
