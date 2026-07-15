@@ -7,7 +7,7 @@ import { regeneratePlan } from "@/server/actions/coach";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
-import { PlanDay } from "@/components/coach/plan-day";
+import { CoachCalendar, type CalDay } from "@/components/coach/coach-calendar";
 import { WeightChart } from "@/components/fitness/weight-chart";
 import { WorkoutForm } from "@/components/fitness/workout-form";
 import { WorkoutList } from "@/components/fitness/workout-list";
@@ -41,6 +41,30 @@ export default async function CoachPage() {
   const sessionByDate = new Map(plan.map((s) => [s.date, s]));
   const days = Array.from({ length: 14 }, (_, i) => addDaysISO(today, i));
   const missingShifts = days.filter((d) => !shiftMap[d]).length;
+
+  // Kalender-Raster: volle Mo–So-Wochen, die das 14-Tage-Fenster abdecken.
+  const gridStart = weekStartISO(today);
+  const lastWeek = weekStartISO(horizon);
+  const weeks: CalDay[][] = [];
+  for (let ws = gridStart; ws <= lastWeek; ws = addDaysISO(ws, 7)) {
+    weeks.push(
+      Array.from({ length: 7 }, (_, i) => {
+        const d = addDaysISO(ws, i);
+        const active = d >= today && d <= horizon;
+        const session = sessionByDate.get(d) ?? null;
+        return {
+          date: d,
+          active,
+          isToday: d === today,
+          shift: shiftMap[d],
+          session,
+          loggable:
+            active && d === today && !!session && LOGGABLE_KINDS.has(session.kind),
+          logged: loggedDates.has(d),
+        };
+      }),
+    );
+  }
 
   const weekIndex = Math.max(
     Math.round(diffDaysISO(settings.startWeek, currentWeek) / 7),
@@ -119,25 +143,7 @@ export default async function CoachPage() {
         </Card>
       ) : null}
 
-      <section className="space-y-3">
-        {days.map((d) => {
-          const session = sessionByDate.get(d);
-          // Loggbar ist nur der heutige Tag mit trainierbarer Einheit.
-          const loggable =
-            d === today && !!session && LOGGABLE_KINDS.has(session.kind);
-          return (
-            <PlanDay
-              key={d}
-              date={d}
-              shift={shiftMap[d]}
-              session={session}
-              isToday={d === today}
-              loggable={loggable}
-              logged={loggedDates.has(d)}
-            />
-          );
-        })}
-      </section>
+      <CoachCalendar weeks={weeks} initialSelected={today} />
 
       {/* Logbuch: freies Loggen + Historie + Gewichtstrend */}
       <section className="space-y-4 border-t border-border pt-6">
