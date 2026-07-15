@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import { addDaysISO, diffDaysISO, todayISO, weekStartISO } from "@/domain/dates";
 import { PHASE_LABEL, phaseForWeek } from "@/domain/coach";
+import { trailingAverage } from "@/domain/fitness";
 import { loadCoachPage } from "@/server/queries/coach";
 import { regeneratePlan } from "@/server/actions/coach";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanDay } from "@/components/coach/plan-day";
+import { WeightChart } from "@/components/fitness/weight-chart";
+import { WorkoutForm } from "@/components/fitness/workout-form";
+import { WorkoutList } from "@/components/fitness/workout-list";
+
+const LOGGABLE_KINDS = new Set(["longrun", "run", "easy", "gym", "mobility"]);
 
 export const metadata: Metadata = { title: "Coach — Vision" };
 
@@ -19,8 +25,17 @@ export default async function CoachPage() {
   const horizon = addDaysISO(today, 13);
   const currentWeek = weekStartISO(today);
 
-  const { settings, shiftMap, plan, weekPlannedKm, weekActuals } =
-    await loadCoachPage(today, horizon, currentWeek);
+  const {
+    settings,
+    shiftMap,
+    plan,
+    weekPlannedKm,
+    weekActuals,
+    weightSeries,
+    recentWorkouts,
+    loggedDates,
+  } = await loadCoachPage(today, horizon, currentWeek);
+  const weightTrend = trailingAverage(weightSeries, 7);
 
   const sessionByDate = new Map(plan.map((s) => [s.date, s]));
   const days = Array.from({ length: 14 }, (_, i) => addDaysISO(today, i));
@@ -111,15 +126,68 @@ export default async function CoachPage() {
       ) : null}
 
       <section className="space-y-3">
-        {days.map((d) => (
-          <PlanDay
-            key={d}
-            date={d}
-            shift={shiftMap[d]}
-            session={sessionByDate.get(d)}
-            isToday={d === today}
-          />
-        ))}
+        {days.map((d) => {
+          const session = sessionByDate.get(d);
+          // Loggbar ist nur der heutige Tag mit trainierbarer Einheit.
+          const loggable =
+            d === today && !!session && LOGGABLE_KINDS.has(session.kind);
+          return (
+            <PlanDay
+              key={d}
+              date={d}
+              shift={shiftMap[d]}
+              session={session}
+              isToday={d === today}
+              loggable={loggable}
+              logged={loggedDates.has(d)}
+            />
+          );
+        })}
+      </section>
+
+      {/* Logbuch: freies Loggen + Historie + Gewichtstrend */}
+      <section className="space-y-4 border-t border-border pt-6">
+        <h2 className="text-lg font-semibold">Logbuch</h2>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Training loggen</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WorkoutForm />
+          </CardContent>
+        </Card>
+
+        {recentWorkouts.length > 0 ? (
+          <WorkoutList workouts={recentWorkouts} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Noch nichts geloggt. Nutze oben die Erledigt-Taste an der
+            heutigen Einheit oder trag frei ein, was du gemacht hast.
+          </p>
+        )}
+
+        <Card>
+          <CardHeader className="flex-row flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <CardTitle>Gewicht</CardTitle>
+            {weightTrend.at(-1) ? (
+              <span className="text-sm text-muted-foreground">
+                Trend: {Math.round((weightTrend.at(-1)?.value ?? 0) * 10) / 10}{" "}
+                kg
+              </span>
+            ) : null}
+          </CardHeader>
+          <CardContent>
+            {weightSeries.length >= 2 ? (
+              <WeightChart daily={weightSeries} trend={weightTrend} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Ab zwei Messungen erscheint hier dein Verlauf mit
+                7-Tage-Trendlinie. Gewicht trägst du im Heute-Tab ein.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </section>
     </div>
   );

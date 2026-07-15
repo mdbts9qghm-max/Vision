@@ -12,12 +12,14 @@ export function QuickLog({
   recoveryToday,
   hrvToday,
   rhrToday,
+  stepsToday,
 }: {
   weightToday?: number;
   sleepToday?: number;
   recoveryToday?: number;
   hrvToday?: number;
   rhrToday?: number;
+  stepsToday?: number;
 }) {
   return (
     <Card>
@@ -58,6 +60,13 @@ export function QuickLog({
             unit="kg"
             step="0.1"
             todayValue={weightToday}
+          />
+          <MetricInput
+            type="steps"
+            label="Schritte"
+            unit="Anzahl"
+            step="1"
+            todayValue={stepsToday}
           />
         </div>
       </CardContent>

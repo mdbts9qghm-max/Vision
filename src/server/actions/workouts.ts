@@ -48,8 +48,8 @@ export async function createWorkout(
     distanceKm: parsed.data.distanceKm ?? null,
     note: parsed.data.note || null,
   });
-  revalidatePath("/fitness");
   revalidatePath("/coach");
+  revalidatePath("/dashboard");
   return {};
 }
 
@@ -59,7 +59,7 @@ export async function deleteWorkout(rawId: string): Promise<ActionState> {
   if (!id.success) return { error: "Ungültiges Training." };
 
   await db.delete(workouts).where(eq(workouts.id, id.data));
-  revalidatePath("/fitness");
   revalidatePath("/coach");
+  revalidatePath("/dashboard");
   return {};
 }

@@ -56,8 +56,9 @@ export async function upsertMetric(input: {
       target: [metrics.type, metrics.date],
       set: { value },
     });
-  revalidatePath("/fitness");
-  // Quick-Log auf dem Dashboard; Schlaf speist die Autoregulation.
+  // Quick-Log auf dem Dashboard; Schlaf speist die Autoregulation,
+  // Gewicht den Trend im Coach-Logbuch.
   revalidatePath("/dashboard");
+  revalidatePath("/coach");
   return {};
 }

@@ -5,7 +5,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "@/server/auth";
 import { db } from "@/server/db";
-import { plannedSessions, shifts } from "@/server/db/schema";
+import { plannedSessions, shifts, workouts } from "@/server/db/schema";
 import { addDaysISO, diffDaysISO, isValidISODate, todayISO, weekStartISO } from "@/domain/dates";
 import {
   baseTargetKm,
@@ -15,6 +15,7 @@ import {
   planWeek,
   type CoachParams,
 } from "@/domain/coach";
+import { plannedSessionToWorkout } from "@/domain/session-workout";
 import {
   getOrCreateCoachSettings,
   getShiftMap,
@@ -23,6 +24,47 @@ import {
 } from "@/server/queries/coach";
 
 export type ActionState = { error?: string };
+
+const logSchema = z.object({
+  date: z.string().refine(isValidISODate, "Ungültiges Datum."),
+});
+
+/** Ein-Tap: die geplante Einheit des Tages als Workout ins Logbuch schreiben. */
+export async function logPlannedSession(input: {
+  date: string;
+}): Promise<ActionState> {
+  await requireAuth();
+  const parsed = logSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { date } = parsed.data;
+  const today = todayISO();
+  if (date > today || date < addDaysISO(today, -6)) {
+    return { error: "Nur heute oder bis 6 Tage zurück loggbar." };
+  }
+
+  const [session] = await db
+    .select()
+    .from(plannedSessions)
+    .where(eq(plannedSessions.date, date));
+  if (!session) return { error: "Für diesen Tag ist nichts geplant." };
+
+  const draft = plannedSessionToWorkout(
+    session.kind,
+    session.targetKm,
+    session.targetMin,
+  );
+  if (!draft) return { error: "Ruhetage werden nicht geloggt." };
+
+  await db.insert(workouts).values({
+    date,
+    type: draft.type,
+    durationMin: draft.durationMin,
+    distanceKm: draft.distanceKm ?? null,
+    note: draft.note,
+  });
+  revalidateCoachViews();
+  return {};
+}
 
 const shiftSchema = z.object({
   date: z.string().refine(isValidISODate, "Ungültiges Datum."),

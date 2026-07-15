@@ -6,6 +6,7 @@ import { formatDayShort } from "@/domain/dates";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShiftSelect } from "./shift-select";
+import { LogSessionButton } from "./log-session-button";
 
 const KIND_ICON = {
   longrun: Mountain,
@@ -21,11 +22,16 @@ export function PlanDay({
   shift,
   session,
   isToday,
+  loggable,
+  logged,
 }: {
   date: string;
   shift?: ShiftType;
   session?: PlannedSession;
   isToday: boolean;
+  /** Nur heute/backfill-fähige, trainierbare Einheiten sind loggbar. */
+  loggable?: boolean;
+  logged?: boolean;
 }) {
   const kind = session?.kind ?? "rest";
   const Icon = KIND_ICON[kind];
@@ -54,7 +60,7 @@ export function PlanDay({
               )}
               aria-hidden
             />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-sm">
                 <span className="font-medium">{SESSION_KIND_LABEL[kind]}</span>
                 {isRun && session.targetMin
@@ -66,6 +72,9 @@ export function PlanDay({
               </p>
               <p className="text-xs text-muted-foreground">{session.reason}</p>
             </div>
+            {loggable ? (
+              <LogSessionButton date={date} logged={logged ?? false} />
+            ) : null}
           </div>
         ) : null}
       </CardContent>

@@ -202,6 +202,7 @@ export default async function DashboardPage() {
         recoveryToday={metricsToday.recovery}
         hrvToday={metricsToday.hrv}
         rhrToday={metricsToday.rhr}
+        stepsToday={metricsToday.steps}
       />
     </div>
   );
