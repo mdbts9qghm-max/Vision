@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
-import {
-  getMetricSeries,
-  getRecentWorkouts,
-  getWorkoutsSince,
-} from "@/server/queries/fitness";
-import { addDaysISO, todayISO, weekStartISO } from "@/domain/dates";
+import { loadFitness } from "@/server/queries/fitness";
+import { todayISO } from "@/domain/dates";
 import { averageOverDays, trailingAverage } from "@/domain/fitness";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WeightChart } from "@/components/fitness/weight-chart";
@@ -16,15 +12,8 @@ export const metadata: Metadata = { title: "Fitness — Vision" };
 
 export default async function FitnessPage() {
   const today = todayISO();
-  const chartSince = addDaysISO(today, -89); // 90 Tage
-  const [weight, steps, sleep, recentWorkouts, weekWorkouts] =
-    await Promise.all([
-      getMetricSeries("weight", chartSince),
-      getMetricSeries("steps", addDaysISO(today, -6)),
-      getMetricSeries("sleep", addDaysISO(today, -6)),
-      getRecentWorkouts(10),
-      getWorkoutsSince(weekStartISO(today)),
-    ]);
+  const { weight, steps, sleep, recentWorkouts, weekWorkouts } =
+    await loadFitness(today);
 
   const weightToday = weight.find((p) => p.date === today)?.value;
   const stepsToday = steps.find((p) => p.date === today)?.value;

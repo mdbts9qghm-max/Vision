@@ -7,6 +7,73 @@ import type { ShiftType } from "@/domain/coach";
 export type CoachSettings = typeof coachSettings.$inferSelect;
 export type PlannedSession = typeof plannedSessions.$inferSelect;
 
+export interface CoachPageData {
+  settings: CoachSettings;
+  shiftMap: Record<string, ShiftType>;
+  plan: PlannedSession[];
+  weekPlannedKm: number;
+  weekActuals: { km: number; gymCount: number; runCount: number };
+}
+
+/**
+ * Alle Coach-Seiten-Daten in EINEM Turso-Roundtrip (db.batch).
+ * Fehlen die Settings (Erstnutzung), werden sie einmalig nachgelegt.
+ */
+export async function loadCoachPage(
+  today: string,
+  horizon: string,
+  currentWeek: string,
+): Promise<CoachPageData> {
+  const weekEnd = addDaysISO(currentWeek, 6);
+  const [settingsRows, shiftRows, planRows, plannedKmRows, actualsRows] =
+    await db.batch([
+      db.select().from(coachSettings),
+      db
+        .select({ date: shifts.date, type: shifts.type })
+        .from(shifts)
+        .where(and(gte(shifts.date, today), lte(shifts.date, horizon))),
+      db
+        .select()
+        .from(plannedSessions)
+        .where(
+          and(gte(plannedSessions.date, today), lte(plannedSessions.date, horizon)),
+        )
+        .orderBy(asc(plannedSessions.date)),
+      db
+        .select({ km: sql<number>`coalesce(sum(${plannedSessions.targetKm}), 0)` })
+        .from(plannedSessions)
+        .where(
+          and(
+            gte(plannedSessions.date, currentWeek),
+            lte(plannedSessions.date, weekEnd),
+          ),
+        ),
+      db
+        .select({
+          km: sql<number>`coalesce(sum(${workouts.distanceKm}), 0)`,
+          gymCount: sql<number>`sum(case when ${workouts.type} = 'Kraft' then 1 else 0 end)`,
+          runCount: sql<number>`sum(case when ${workouts.type} = 'Kraft' then 0 else 1 end)`,
+        })
+        .from(workouts)
+        .where(and(gte(workouts.date, currentWeek), lte(workouts.date, weekEnd))),
+    ]);
+
+  const shiftMap: Record<string, ShiftType> = {};
+  for (const s of shiftRows) shiftMap[s.date] = s.type;
+
+  return {
+    settings: settingsRows[0] ?? (await getOrCreateCoachSettings()),
+    shiftMap,
+    plan: planRows,
+    weekPlannedKm: plannedKmRows[0]?.km ?? 0,
+    weekActuals: {
+      km: actualsRows[0]?.km ?? 0,
+      gymCount: actualsRows[0]?.gymCount ?? 0,
+      runCount: actualsRows[0]?.runCount ?? 0,
+    },
+  };
+}
+
 /** Singleton-Einstellungen; beim ersten Zugriff mit Defaults angelegt. */
 export async function getOrCreateCoachSettings(): Promise<CoachSettings> {
   const rows = await db.select().from(coachSettings);
@@ -29,17 +96,6 @@ export async function getShiftMap(
     .from(shifts)
     .where(and(gte(shifts.date, from), lte(shifts.date, to)));
   return Object.fromEntries(rows.map((r) => [r.date, r.type]));
-}
-
-export async function getPlanRange(
-  from: string,
-  to: string,
-): Promise<PlannedSession[]> {
-  return db
-    .select()
-    .from(plannedSessions)
-    .where(and(gte(plannedSessions.date, from), lte(plannedSessions.date, to)))
-    .orderBy(asc(plannedSessions.date));
 }
 
 export interface WeekActuals {

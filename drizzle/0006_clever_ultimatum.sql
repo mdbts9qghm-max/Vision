@@ -1,0 +1,1 @@
+CREATE INDEX `workouts_date_idx` ON `workouts` (`date`);

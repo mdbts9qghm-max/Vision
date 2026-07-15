@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { goals, milestones } from "@/server/db/schema";
 
@@ -10,32 +10,31 @@ export interface GoalWithMilestones {
   milestones: Milestone[];
 }
 
-export async function getGoalsWithMilestones(): Promise<GoalWithMilestones[]> {
-  const rows = await db.select().from(goals).orderBy(asc(goals.createdAt));
-  if (rows.length === 0) return [];
-
-  const ms = await db
-    .select()
-    .from(milestones)
-    .where(
-      inArray(
-        milestones.goalId,
-        rows.map((g) => g.id),
-      ),
-    )
-    .orderBy(asc(milestones.sortOrder));
-
+/** Gruppiert vorgeladene Zeilen — kein zusätzlicher DB-Roundtrip. */
+export function assembleGoals(
+  goalRows: Goal[],
+  milestoneRows: Milestone[],
+): GoalWithMilestones[] {
   const byGoal = new Map<string, Milestone[]>();
-  for (const m of ms) {
+  for (const m of milestoneRows) {
     const list = byGoal.get(m.goalId);
     if (list) list.push(m);
     else byGoal.set(m.goalId, [m]);
   }
-
-  return rows.map((goal) => ({
+  return goalRows.map((goal) => ({
     goal,
-    milestones: byGoal.get(goal.id) ?? [],
+    milestones: (byGoal.get(goal.id) ?? []).sort(
+      (a, b) => a.sortOrder - b.sortOrder,
+    ),
   }));
+}
+
+export async function getGoalsWithMilestones(): Promise<GoalWithMilestones[]> {
+  const [goalRows, milestoneRows] = await db.batch([
+    db.select().from(goals).orderBy(asc(goals.createdAt)),
+    db.select().from(milestones).orderBy(asc(milestones.sortOrder)),
+  ]);
+  return assembleGoals(goalRows, milestoneRows);
 }
 
 export async function getGoalWithMilestones(

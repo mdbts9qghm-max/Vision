@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   real,
   sqliteTable,
@@ -124,15 +125,19 @@ export const metrics = sqliteTable(
   ],
 );
 
-export const workouts = sqliteTable("workouts", {
-  id: id(),
-  date: text("date").notNull(), // YYYY-MM-DD
-  type: text("type").notNull(),
-  durationMin: integer("duration_min").notNull(),
-  distanceKm: real("distance_km"), // für Läufe: zählt aufs Wochenziel
-  note: text("note"),
-  createdAt: createdAt(),
-});
+export const workouts = sqliteTable(
+  "workouts",
+  {
+    id: id(),
+    date: text("date").notNull(), // YYYY-MM-DD
+    type: text("type").notNull(),
+    durationMin: integer("duration_min").notNull(),
+    distanceKm: real("distance_km"), // für Läufe: zählt aufs Wochenziel
+    note: text("note"),
+    createdAt: createdAt(),
+  },
+  (table) => [index("workouts_date_idx").on(table.date)],
+);
 
 // ---- Trainings-Coach (Schichtarbeit + Ultra-Aufbau) ----
 

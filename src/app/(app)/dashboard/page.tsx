@@ -2,21 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
 import { logout } from "@/server/actions/auth";
-import { getHabitsWithCompletions } from "@/server/queries/habits";
-import { getFocusForDate } from "@/server/queries/focus";
-import {
-  getOrCreateCoachSettings,
-  getPlanRange,
-  getShiftMap,
-  getWeekActuals,
-  getWeekPlannedKm,
-} from "@/server/queries/coach";
-import { getGoalsWithMilestones } from "@/server/queries/goals";
-import { getMetricSeries } from "@/server/queries/fitness";
-import { getDaySignals } from "@/server/queries/readiness";
+import { loadDashboard } from "@/server/queries/dashboard";
 import { adjustSession } from "@/domain/readiness";
 import {
-  addDaysISO,
   diffDaysISO,
   formatLongDate,
   todayISO,
@@ -44,37 +32,18 @@ export const metadata: Metadata = { title: "Heute — Vision" };
 export default async function DashboardPage() {
   const today = todayISO();
   const currentWeek = weekStartISO(today);
-  const [
-    all,
+  const {
+    habits: all,
+    goals,
     focus,
-    todayPlan,
+    todaySession: planToday,
     signals,
     shifts,
     settings,
     weekPlannedKm,
     weekActuals,
-    goals,
-    weightSeries,
-    sleepSeries,
-    recoverySeries,
-    hrvSeries,
-    rhrSeries,
-  ] = await Promise.all([
-    getHabitsWithCompletions(),
-    getFocusForDate(today),
-    getPlanRange(today, today),
-    getDaySignals(today),
-    getShiftMap(currentWeek, addDaysISO(currentWeek, 6)),
-    getOrCreateCoachSettings(),
-    getWeekPlannedKm(currentWeek),
-    getWeekActuals(currentWeek),
-    getGoalsWithMilestones(),
-    getMetricSeries("weight", today),
-    getMetricSeries("sleep", today),
-    getMetricSeries("recovery", today),
-    getMetricSeries("hrv", today),
-    getMetricSeries("rhr", today),
-  ]);
+    metricsToday,
+  } = await loadDashboard(today, currentWeek);
 
   // 2.1 Schicht-Kontext
   const shiftToday = shiftOn(shifts, today);
@@ -99,7 +68,7 @@ export default async function DashboardPage() {
   ).length;
 
   // 2.4 Trainingseinheit (nur mit bekannter Schicht — nichts raten)
-  const todaySession = shiftToday ? todayPlan[0] : undefined;
+  const todaySession = shiftToday ? planToday : undefined;
   const adjusted = todaySession
     ? adjustSession(todaySession, signals)
     : undefined;
@@ -228,11 +197,11 @@ export default async function DashboardPage() {
       {mainGoal ? <ActiveGoalCard item={mainGoal} today={today} /> : null}
 
       <QuickLog
-        weightToday={weightSeries.find((p) => p.date === today)?.value}
-        sleepToday={sleepSeries.find((p) => p.date === today)?.value}
-        recoveryToday={recoverySeries.find((p) => p.date === today)?.value}
-        hrvToday={hrvSeries.find((p) => p.date === today)?.value}
-        rhrToday={rhrSeries.find((p) => p.date === today)?.value}
+        weightToday={metricsToday.weight}
+        sleepToday={metricsToday.sleep}
+        recoveryToday={metricsToday.recovery}
+        hrvToday={metricsToday.hrv}
+        rhrToday={metricsToday.rhr}
       />
     </div>
   );

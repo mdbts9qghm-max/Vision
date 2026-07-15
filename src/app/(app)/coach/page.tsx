@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import { addDaysISO, diffDaysISO, todayISO, weekStartISO } from "@/domain/dates";
 import { PHASE_LABEL, phaseForWeek } from "@/domain/coach";
-import {
-  getOrCreateCoachSettings,
-  getPlanRange,
-  getShiftMap,
-  getWeekActuals,
-  getWeekPlannedKm,
-} from "@/server/queries/coach";
+import { loadCoachPage } from "@/server/queries/coach";
 import { regeneratePlan } from "@/server/actions/coach";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,14 +19,8 @@ export default async function CoachPage() {
   const horizon = addDaysISO(today, 13);
   const currentWeek = weekStartISO(today);
 
-  const [settings, shiftMap, plan, weekPlannedKm, weekActuals] =
-    await Promise.all([
-      getOrCreateCoachSettings(),
-      getShiftMap(today, horizon),
-      getPlanRange(today, horizon),
-      getWeekPlannedKm(currentWeek),
-      getWeekActuals(currentWeek),
-    ]);
+  const { settings, shiftMap, plan, weekPlannedKm, weekActuals } =
+    await loadCoachPage(today, horizon, currentWeek);
 
   const sessionByDate = new Map(plan.map((s) => [s.date, s]));
   const days = Array.from({ length: 14 }, (_, i) => addDaysISO(today, i));
