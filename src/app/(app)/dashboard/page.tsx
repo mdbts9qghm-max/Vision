@@ -49,6 +49,9 @@ export default async function DashboardPage() {
     goals,
     weightSeries,
     sleepSeries,
+    recoverySeries,
+    hrvSeries,
+    rhrSeries,
   ] = await Promise.all([
     getHabitsWithCompletions(),
     getFocusForDate(today),
@@ -61,6 +64,9 @@ export default async function DashboardPage() {
     getGoalsWithMilestones(),
     getMetricSeries("weight", today),
     getMetricSeries("sleep", today),
+    getMetricSeries("recovery", today),
+    getMetricSeries("hrv", today),
+    getMetricSeries("rhr", today),
   ]);
 
   // 2.1 Schicht-Kontext
@@ -205,6 +211,9 @@ export default async function DashboardPage() {
       <QuickLog
         weightToday={weightSeries.find((p) => p.date === today)?.value}
         sleepToday={sleepSeries.find((p) => p.date === today)?.value}
+        recoveryToday={recoverySeries.find((p) => p.date === today)?.value}
+        hrvToday={hrvSeries.find((p) => p.date === today)?.value}
+        rhrToday={rhrSeries.find((p) => p.date === today)?.value}
       />
     </div>
   );

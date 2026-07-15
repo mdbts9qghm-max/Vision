@@ -119,8 +119,9 @@ Nachtschicht differenziert: 1. Nacht des Blocks = lockerer Lauf am Vormittag
 vor dem Vorschlaf (gedeckelt ~25 % Wochen-km), Folgenächte = Nachholschlaf,
 Lauftage entzerrt: nie 3 in Folge, max. eine Zweier-Folge pro Woche
 (Back-to-Back zählt als diese; Startblock/Basis strikt mit Ruhetag),
-Autoregulation (Schlaf <6 h + Check-in „platt“: ≥2 Signale → Ruhe, 1 Signal
-→ Umfang ×0,6), Heute-Empfehlung auf dem Dashboard, km-Tracking im
+Autoregulation (Warnsignale: Schlaf <6 h, Check-in „platt“, WHOOP-Recovery
+<34 %: ≥2 Signale → Ruhe, 1 Signal → Umfang ×0,6; WHOOP-Werte Recovery/HRV/
+Ruhepuls manuell im Dashboard-Quick-Log), Heute-Empfehlung auf dem Dashboard, km-Tracking im
 Trainings-Log. Offen: Renndatum-Periodisierung + Tapering (sobald ein
 Rennen gebucht ist), gezielte Z4-Reize ab Ausbauphase (max. 1×/Woche).
 

@@ -87,8 +87,9 @@ export const metrics = sqliteTable(
   "metrics",
   {
     id: id(),
-    type: text("type", { enum: ["weight", "steps", "sleep", "custom"] })
-      .notNull(),
+    type: text("type", {
+      enum: ["weight", "steps", "sleep", "recovery", "hrv", "rhr", "custom"],
+    }).notNull(),
     date: text("date").notNull(), // YYYY-MM-DD
     value: real("value").notNull(),
     unit: text("unit").notNull(),

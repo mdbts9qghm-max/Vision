@@ -3,6 +3,7 @@
  * der Tageszustand entscheidet über die Ausführung. Warnsignale:
  *   1. Schlaf letzte Nacht < 6 h
  *   2. Erholungs-Check "platt" (low)
+ *   3. WHOOP-Recovery im roten Bereich (< 34 %)
  * Entscheidungsregel: ≥2 Signale → Einheit wird Ruhe. 1 Signal → Umfang
  * deutlich reduzieren, Long Run wird zum moderaten Lauf.
  * Verpasste Einheiten sind kein Problem; Infekt/Verletzung kostet Wochen.
@@ -14,9 +15,13 @@ import type { SessionKind } from "./coach";
 
 export type ReadinessScore = "good" | "ok" | "low";
 
+/** WHOOP-Ampel: rot < 34 %. */
+export const RECOVERY_RED_BELOW = 34;
+
 export interface DaySignals {
   sleepHours: number | null; // null = nicht erfasst
   readiness: ReadinessScore | null; // null = kein Check-in
+  recoveryPct: number | null; // WHOOP-Recovery, null = nicht erfasst
 }
 
 export interface SessionAdjustment {
@@ -27,11 +32,26 @@ export interface SessionAdjustment {
   note: string | null;
 }
 
+/** Namen der ausgelösten Warnsignale (für Begründungen). */
+export function triggeredSignals(signals: DaySignals): string[] {
+  const list: string[] = [];
+  if (signals.sleepHours !== null && signals.sleepHours < 6) {
+    list.push("unter 6 h Schlaf");
+  }
+  if (signals.readiness === "low") {
+    list.push("Check-in „platt“");
+  }
+  if (
+    signals.recoveryPct !== null &&
+    signals.recoveryPct < RECOVERY_RED_BELOW
+  ) {
+    list.push(`WHOOP-Recovery rot (${signals.recoveryPct} %)`);
+  }
+  return list;
+}
+
 export function warningSignals(signals: DaySignals): number {
-  let count = 0;
-  if (signals.sleepHours !== null && signals.sleepHours < 6) count++;
-  if (signals.readiness === "low") count++;
-  return count;
+  return triggeredSignals(signals).length;
 }
 
 export function adjustSession(
@@ -50,18 +70,16 @@ export function adjustSession(
     return { kind, targetKm, targetMin, note: null };
   }
 
-  const warnings = warningSignals(signals);
+  const triggered = triggeredSignals(signals);
+  const warnings = triggered.length;
   if (warnings >= 2) {
     return {
       kind: "rest",
-      note: "Autoregulation: zu wenig Schlaf und platt — heute ist Erholung das Training. Die Einheit fällt aus, nicht dein Aufbau.",
+      note: `Autoregulation (${triggered.join(" + ")}): heute ist Erholung das Training. Die Einheit fällt aus, nicht dein Aufbau.`,
     };
   }
   if (warnings === 1) {
-    const reason =
-      signals.readiness === "low"
-        ? "Check-in „platt“"
-        : "unter 6 h Schlaf";
+    const reason = triggered[0];
     if (kind === "gym") {
       return {
         kind,

@@ -11,12 +11,16 @@ const METRIC_CONFIG = {
   weight: { unit: "kg", min: 20, max: 400 },
   steps: { unit: "Schritte", min: 0, max: 200_000 },
   sleep: { unit: "h", min: 0, max: 24 },
+  // WHOOP-Werte (manuell übertragen)
+  recovery: { unit: "%", min: 0, max: 100 },
+  hrv: { unit: "ms", min: 1, max: 300 },
+  rhr: { unit: "bpm", min: 20, max: 150 },
 } as const;
 
 export type MetricType = keyof typeof METRIC_CONFIG;
 
 const inputSchema = z.object({
-  type: z.enum(["weight", "steps", "sleep"]),
+  type: z.enum(["weight", "steps", "sleep", "recovery", "hrv", "rhr"]),
   value: z.number().finite(),
   date: z.string().refine(isValidISODate, "Ungültiges Datum.").optional(),
 });

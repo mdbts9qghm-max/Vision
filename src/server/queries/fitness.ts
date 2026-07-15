@@ -6,7 +6,7 @@ import type { SeriesPoint } from "@/domain/fitness";
 export type Workout = typeof workouts.$inferSelect;
 
 export async function getMetricSeries(
-  type: "weight" | "steps" | "sleep",
+  type: "weight" | "steps" | "sleep" | "recovery" | "hrv" | "rhr",
   sinceISO: string,
 ): Promise<SeriesPoint[]> {
   return db

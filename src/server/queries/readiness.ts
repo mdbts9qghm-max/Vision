@@ -3,13 +3,17 @@ import { db } from "@/server/db";
 import { metrics, readinessChecks } from "@/server/db/schema";
 import type { DaySignals } from "@/domain/readiness";
 
-/** Tagessignale für die Autoregulation: Schlaf (Metrik) + Check-in. */
+/** Tagessignale für die Autoregulation: Schlaf, WHOOP-Recovery, Check-in. */
 export async function getDaySignals(date: string): Promise<DaySignals> {
-  const [sleepRows, checkRows] = await Promise.all([
+  const [sleepRows, recoveryRows, checkRows] = await Promise.all([
     db
       .select({ value: metrics.value })
       .from(metrics)
       .where(and(eq(metrics.type, "sleep"), eq(metrics.date, date))),
+    db
+      .select({ value: metrics.value })
+      .from(metrics)
+      .where(and(eq(metrics.type, "recovery"), eq(metrics.date, date))),
     db
       .select({ score: readinessChecks.score })
       .from(readinessChecks)
@@ -17,6 +21,7 @@ export async function getDaySignals(date: string): Promise<DaySignals> {
   ]);
   return {
     sleepHours: sleepRows[0]?.value ?? null,
+    recoveryPct: recoveryRows[0]?.value ?? null,
     readiness: checkRows[0]?.score ?? null,
   };
 }
