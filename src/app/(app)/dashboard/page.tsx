@@ -15,15 +15,22 @@ import { getGoalsWithMilestones } from "@/server/queries/goals";
 import { getMetricSeries } from "@/server/queries/fitness";
 import { getDaySignals } from "@/server/queries/readiness";
 import { adjustSession } from "@/domain/readiness";
-import { diffDaysISO, formatLongDate, todayISO, weekStartISO } from "@/domain/dates";
+import {
+  addDaysISO,
+  diffDaysISO,
+  formatLongDate,
+  todayISO,
+  weekStartISO,
+} from "@/domain/dates";
 import { phaseForWeek } from "@/domain/coach";
-import { isDueOn } from "@/domain/recurrence";
+import { isDueOn, shiftOn } from "@/domain/recurrence";
 import { overallWeeklyProgress, weeklyProgress } from "@/domain/scoring";
 import { recurrenceLabel } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { CheckButton } from "@/components/habits/check-button";
+import { SkipButton } from "@/components/habits/skip-button";
 import { FocusCard } from "@/components/dashboard/focus-card";
 import { ShiftContext } from "@/components/dashboard/shift-context";
 import { TodayTrainingCard } from "@/components/dashboard/today-training";
@@ -42,7 +49,7 @@ export default async function DashboardPage() {
     focus,
     todayPlan,
     signals,
-    shiftMap,
+    shifts,
     settings,
     weekPlannedKm,
     weekActuals,
@@ -57,7 +64,7 @@ export default async function DashboardPage() {
     getFocusForDate(today),
     getPlanRange(today, today),
     getDaySignals(today),
-    getShiftMap(today, today),
+    getShiftMap(currentWeek, addDaysISO(currentWeek, 6)),
     getOrCreateCoachSettings(),
     getWeekPlannedKm(currentWeek),
     getWeekActuals(currentWeek),
@@ -70,23 +77,25 @@ export default async function DashboardPage() {
   ]);
 
   // 2.1 Schicht-Kontext
-  const shiftToday = shiftMap[today];
+  const shiftToday = shiftOn(shifts, today);
+  const statusToday = (completions: { date: string; status: string }[]) =>
+    completions.find((c) => c.date === today)?.status;
 
   // 2.3 Heute fällige Habits
   const active = all.filter(({ habit }) => !habit.archivedAt);
-  const dueToday = active.filter(({ habit, completedDates }) => {
-    if (!isDueOn(habit.recurrence, today)) return false;
+  const dueToday = active.filter(({ habit, completions }) => {
+    if (!isDueOn(habit.recurrence, today, shiftToday)) return false;
     if (habit.recurrence.type !== "timesPerWeek") return true;
-    const week = weeklyProgress(habit.recurrence, completedDates, today);
-    return week.done < week.target || completedDates.includes(today);
+    const week = weeklyProgress(habit.recurrence, completions, today, shifts);
+    return week.done < week.target || statusToday(completions) !== undefined;
   });
   const sortedDue = [...dueToday].sort(
     (a, b) =>
-      Number(a.completedDates.includes(today)) -
-      Number(b.completedDates.includes(today)),
+      Number(statusToday(a.completions) !== undefined) -
+      Number(statusToday(b.completions) !== undefined),
   );
   const openCount = dueToday.filter(
-    ({ completedDates }) => !completedDates.includes(today),
+    ({ completions }) => statusToday(completions) === undefined,
   ).length;
 
   // 2.4 Trainingseinheit (nur mit bekannter Schicht — nichts raten)
@@ -102,11 +111,12 @@ export default async function DashboardPage() {
   );
   const isStartblock = phaseForWeek(weekIndex) === "startblock";
   const habitsWeek = overallWeeklyProgress(
-    active.map(({ habit, completedDates }) => ({
+    active.map(({ habit, completions }) => ({
       recurrence: habit.recurrence,
-      completedDates,
+      completions,
     })),
     today,
+    shifts,
   );
 
   // 2.7 Ein Hauptziel: höchste Priorität, dann nächste Deadline
@@ -162,11 +172,13 @@ export default async function DashboardPage() {
               ? "Alles erledigt — stark."
               : `Heute fällig (${openCount} offen)`}
           </h2>
-          {sortedDue.map(({ habit, completedDates }) => {
+          {sortedDue.map(({ habit, completions }) => {
+            const status = statusToday(completions);
             const week = weeklyProgress(
               habit.recurrence,
-              completedDates,
+              completions,
               today,
+              shifts,
             );
             return (
               <Card key={habit.id}>
@@ -174,16 +186,23 @@ export default async function DashboardPage() {
                   <CheckButton
                     habitId={habit.id}
                     date={today}
-                    done={completedDates.includes(today)}
+                    done={status === "done"}
                     label={habit.name}
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{habit.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {recurrenceLabel(habit.recurrence)} · {week.done}/
-                      {week.target} diese Woche
+                    <p className="truncate text-xs text-muted-foreground">
+                      {status === "skipped"
+                        ? "Übersprungen"
+                        : `${recurrenceLabel(habit.recurrence)} · ${week.done}/${week.target} Woche`}
                     </p>
                   </div>
+                  <SkipButton
+                    habitId={habit.id}
+                    date={today}
+                    skipped={status === "skipped"}
+                    label={habit.name}
+                  />
                 </CardContent>
               </Card>
             );

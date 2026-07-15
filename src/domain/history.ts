@@ -4,7 +4,7 @@
  */
 
 import { addDaysISO, weekStartISO } from "./dates";
-import type { Recurrence } from "./recurrence";
+import type { Completion, Recurrence, ShiftLookup } from "./recurrence";
 import { weeklyProgress, type WeeklyProgress } from "./scoring";
 
 export interface WeekHistoryEntry extends WeeklyProgress {
@@ -21,11 +21,12 @@ export interface WeekHistoryEntry extends WeeklyProgress {
  */
 export function weeklyHistory(
   recurrence: Recurrence,
-  completedDates: Iterable<string>,
+  completions: Iterable<Completion>,
   today: string,
   weeks = 12,
+  shifts?: ShiftLookup,
 ): WeekHistoryEntry[] {
-  const dates = [...completedDates];
+  const list = [...completions];
   const currentWeek = weekStartISO(today);
   const result: WeekHistoryEntry[] = [];
   for (let i = weeks - 1; i >= 0; i--) {
@@ -33,7 +34,7 @@ export function weeklyHistory(
     result.push({
       weekStart,
       isCurrent: weekStart === currentWeek,
-      ...weeklyProgress(recurrence, dates, weekStart),
+      ...weeklyProgress(recurrence, list, weekStart, shifts),
     });
   }
   return result;

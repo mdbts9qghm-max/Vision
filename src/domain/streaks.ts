@@ -1,17 +1,23 @@
 /**
  * Streak-Berechnung — immer aus Completions berechnet, nie gespeichert.
+ * Sekundäre Metrik (Habit-Spec 2.6): klein dargestellt, nie Hauptzahl.
  *
- * Semantik (Produktentscheidung):
- * - "daily" und "weekdays": Tages-Streak über fällige Tage. Der heutige Tag
- *   darf noch offen sein, ohne die Streak zu brechen (er zählt dann nur
- *   noch nicht mit).
- * - "timesPerWeek": Wochen-Streak — aufeinanderfolgende Wochen, in denen das
- *   Soll erreicht wurde. Die laufende, noch unfertige Woche bricht die
- *   Streak nicht; sie zählt erst mit, sobald das Soll erreicht ist.
+ * Semantik:
+ * - "daily"/"weekdays": Tages-Streak über fällige Tage. Der heutige Tag darf
+ *   offen sein, ohne zu brechen (zählt dann noch nicht mit).
+ * - "timesPerWeek": Wochen-Streak über erfüllte Wochen; laufende unfertige
+ *   Woche bricht nicht.
+ * - **Ein bewusster Skip bricht den Streak nicht** (neutral).
  */
 
 import { addDaysISO, weekStartISO } from "./dates";
-import { isDueOn, type Recurrence } from "./recurrence";
+import {
+  isDueOn,
+  shiftOn,
+  type Completion,
+  type Recurrence,
+  type ShiftLookup,
+} from "./recurrence";
 
 export type StreakUnit = "days" | "weeks";
 
@@ -20,61 +26,109 @@ export interface Streak {
   unit: StreakUnit;
 }
 
+const MAX_LOOKBACK_DAYS = 750; // Sicherheitsgrenze gegen Endlosläufe
+
+function indexByDate(completions: Iterable<Completion>) {
+  const done = new Set<string>();
+  const skipped = new Set<string>();
+  for (const c of completions) {
+    if (c.status === "skipped") skipped.add(c.date);
+    else done.add(c.date);
+  }
+  return { done, skipped };
+}
+
 export function computeStreak(
   recurrence: Recurrence,
-  completedDates: Iterable<string>,
+  completions: Iterable<Completion>,
   today: string,
+  shifts?: ShiftLookup,
 ): Streak {
-  const done = new Set(completedDates);
+  const { done, skipped } = indexByDate(completions);
   if (recurrence.type === "timesPerWeek") {
     return {
-      value: weekStreak(recurrence.times, done, today),
+      value: weekStreak(recurrence.times, done, skipped, today),
       unit: "weeks",
     };
   }
-  return { value: dayStreak(recurrence, done, today), unit: "days" };
+  return {
+    value: dayStreak(recurrence, done, skipped, today, shifts),
+    unit: "days",
+  };
 }
 
 function dayStreak(
   recurrence: Recurrence,
   done: Set<string>,
+  skipped: Set<string>,
   today: string,
+  shifts?: ShiftLookup,
 ): number {
   if (recurrence.type === "weekdays" && recurrence.weekdays.length === 0) {
     return 0;
   }
 
   let day = today;
-  // Heute darf noch offen sein — dann startet die Zählung gestern.
-  if (isDueOn(recurrence, day) && !done.has(day)) {
+  // Heute darf offen sein — dann startet die Zählung gestern.
+  if (
+    isDueOn(recurrence, day, shiftOn(shifts, day)) &&
+    !done.has(day) &&
+    !skipped.has(day)
+  ) {
     day = addDaysISO(day, -1);
   }
 
   let count = 0;
-  for (;;) {
-    if (isDueOn(recurrence, day)) {
-      if (!done.has(day)) break;
-      count++;
+  for (let i = 0; i < MAX_LOOKBACK_DAYS; i++) {
+    if (isDueOn(recurrence, day, shiftOn(shifts, day))) {
+      if (skipped.has(day)) {
+        // neutral: bricht nicht, zählt nicht
+      } else if (done.has(day)) {
+        count++;
+      } else {
+        break;
+      }
     }
     day = addDaysISO(day, -1);
   }
   return count;
 }
 
-function weekStreak(target: number, done: Set<string>, today: string): number {
-  const perWeek = new Map<string, number>();
+function weekStreak(
+  target: number,
+  done: Set<string>,
+  skipped: Set<string>,
+  today: string,
+): number {
+  const donePerWeek = new Map<string, number>();
+  const skipPerWeek = new Map<string, number>();
   for (const date of done) {
-    const week = weekStartISO(date);
-    perWeek.set(week, (perWeek.get(week) ?? 0) + 1);
+    const w = weekStartISO(date);
+    donePerWeek.set(w, (donePerWeek.get(w) ?? 0) + 1);
   }
+  for (const date of skipped) {
+    const w = weekStartISO(date);
+    skipPerWeek.set(w, (skipPerWeek.get(w) ?? 0) + 1);
+  }
+
+  const satisfied = (week: string): boolean => {
+    const effTarget = Math.max(target - (skipPerWeek.get(week) ?? 0), 0);
+    return (donePerWeek.get(week) ?? 0) >= effTarget;
+  };
 
   let count = 0;
   let week = weekStartISO(today);
-  // Laufende Woche zählt nur, wenn schon erfüllt — sonst überspringen.
-  if ((perWeek.get(week) ?? 0) >= target) count++;
+  // Laufende Woche zählt nur, wenn schon erfüllt (auch via Skip-Reduktion).
+  const currentDone = donePerWeek.get(week) ?? 0;
+  if (currentDone > 0 && satisfied(week)) count++;
   week = addDaysISO(week, -7);
 
-  while ((perWeek.get(week) ?? 0) >= target) {
+  for (let i = 0; i < 200 && satisfied(week); i++) {
+    // Eine komplett leere, nicht-geskippte Vergangenheitswoche ist erfüllt
+    // nur, wenn effTarget 0 ist — das beendet den Streak sauber.
+    if ((donePerWeek.get(week) ?? 0) === 0 && (skipPerWeek.get(week) ?? 0) === 0) {
+      break;
+    }
     count++;
     week = addDaysISO(week, -7);
   }

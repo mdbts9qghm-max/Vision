@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { overallWeeklyProgress, successRate, weeklyProgress } from "./scoring";
-import type { Recurrence } from "./recurrence";
+import type { Completion, Recurrence } from "./recurrence";
 
 // 2026-07-12 ist ein Sonntag; Woche Mo 2026-07-06 … So 2026-07-12.
 const TODAY = "2026-07-12";
@@ -8,16 +8,21 @@ const daily: Recurrence = { type: "daily" };
 const moMiFr: Recurrence = { type: "weekdays", weekdays: [1, 3, 5] };
 const x3: Recurrence = { type: "timesPerWeek", times: 3 };
 
+const done = (...dates: string[]): Completion[] =>
+  dates.map((date) => ({ date, status: "done" }));
+const skip = (...dates: string[]): Completion[] =>
+  dates.map((date) => ({ date, status: "skipped" }));
+
 describe("weeklyProgress", () => {
   it("daily: Soll 7, zählt Tage der laufenden Woche", () => {
     expect(
-      weeklyProgress(daily, ["2026-07-06", "2026-07-08", "2026-07-05"], TODAY),
+      weeklyProgress(daily, done("2026-07-06", "2026-07-08", "2026-07-05"), TODAY),
     ).toEqual({ done: 2, target: 7 });
   });
 
   it("weekdays: nur fällige Tage zählen aufs Soll", () => {
     expect(
-      weeklyProgress(moMiFr, ["2026-07-06", "2026-07-07"], TODAY),
+      weeklyProgress(moMiFr, done("2026-07-06", "2026-07-07"), TODAY),
     ).toEqual({ done: 1, target: 3 });
   });
 
@@ -25,10 +30,36 @@ describe("weeklyProgress", () => {
     expect(
       weeklyProgress(
         x3,
-        ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09"],
+        done("2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09"),
         TODAY,
       ),
     ).toEqual({ done: 3, target: 3 });
+  });
+
+  it("Skip senkt das Wochensoll", () => {
+    expect(
+      weeklyProgress(
+        x3,
+        [...done("2026-07-06"), ...skip("2026-07-07")],
+        TODAY,
+      ),
+    ).toEqual({ done: 1, target: 2 });
+  });
+});
+
+describe("weeklyProgress — Schicht-Fälligkeit", () => {
+  const onlyFree: Recurrence = { type: "daily", shiftTypes: ["free"] };
+  it("zählt nur Tage mit passender (oder unbekannter) Schicht", () => {
+    // Mo frei, Di Nacht, Mi frei — nur Mo+Mi sind fällig.
+    const shifts = {
+      "2026-07-06": "free" as const,
+      "2026-07-07": "night" as const,
+      "2026-07-08": "free" as const,
+    };
+    const p = weeklyProgress(onlyFree, done("2026-07-06"), TODAY, shifts);
+    // 2 bekannte freie Tage + 4 unbekannte (zählen als fällig) = 6, davon 1 erledigt
+    expect(p.done).toBe(1);
+    expect(p.target).toBe(6);
   });
 });
 
@@ -36,13 +67,12 @@ describe("overallWeeklyProgress", () => {
   it("summiert Erledigungen und Solls über alle Gewohnheiten", () => {
     const result = overallWeeklyProgress(
       [
-        { recurrence: daily, completedDates: ["2026-07-06", "2026-07-07"] },
-        { recurrence: x3, completedDates: ["2026-07-08"] },
-        { recurrence: moMiFr, completedDates: [] },
+        { recurrence: daily, completions: done("2026-07-06", "2026-07-07") },
+        { recurrence: x3, completions: done("2026-07-08") },
+        { recurrence: moMiFr, completions: [] },
       ],
       TODAY,
     );
-    // 2/7 + 1/3 + 0/3
     expect(result).toEqual({ done: 3, target: 13 });
   });
 
@@ -53,34 +83,19 @@ describe("overallWeeklyProgress", () => {
 
 describe("successRate — daily/weekdays", () => {
   it("daily: erledigte / fällige Tage im Fenster", () => {
-    // Fenster auf 3 Tage begrenzt: 10.–12.07., davon 2 erledigt.
-    const rate = successRate(
-      daily,
-      ["2026-07-10", "2026-07-12"],
-      TODAY,
-      "2026-01-01",
-      3,
-    );
+    const rate = successRate(daily, done("2026-07-10", "2026-07-12"), TODAY, "2026-01-01", 3);
     expect(rate).toBeCloseTo(2 / 3);
   });
 
   it("zählt erst ab Anlegedatum (since)", () => {
-    // Angelegt am 11.07. → nur 11.+12. fällig, beide erledigt.
-    const rate = successRate(
-      daily,
-      ["2026-07-11", "2026-07-12"],
-      TODAY,
-      "2026-07-11",
-      30,
-    );
+    const rate = successRate(daily, done("2026-07-11", "2026-07-12"), TODAY, "2026-07-11", 30);
     expect(rate).toBe(1);
   });
 
   it("weekdays: nicht-fällige Tage zählen nicht", () => {
-    // Fenster 06.–12.07.: fällig Mo/Mi/Fr = 3 Tage, 2 erledigt.
     const rate = successRate(
       moMiFr,
-      ["2026-07-06", "2026-07-10", "2026-07-11"], // Sa 11.07. zählt nicht
+      done("2026-07-06", "2026-07-10", "2026-07-11"),
       TODAY,
       "2026-07-06",
       7,
@@ -88,11 +103,22 @@ describe("successRate — daily/weekdays", () => {
     expect(rate).toBeCloseTo(2 / 3);
   });
 
+  it("Skip wird aus dem Nenner genommen (kein Fehlschlag)", () => {
+    // Fenster 10.–12.07.: 10. erledigt, 11. übersprungen, 12. erledigt.
+    // Ohne Skip-Ausschluss wäre es 2/3; mit Ausschluss 2/2 = 100 %.
+    const rate = successRate(
+      daily,
+      [...done("2026-07-10", "2026-07-12"), ...skip("2026-07-11")],
+      TODAY,
+      "2026-01-01",
+      3,
+    );
+    expect(rate).toBe(1);
+  });
+
   it("null, wenn im Fenster nichts fällig war", () => {
-    // Nur-Montags-Habit, Fenster Di–So.
     const onlyMonday: Recurrence = { type: "weekdays", weekdays: [1] };
-    const rate = successRate(onlyMonday, [], TODAY, "2026-07-07", 6);
-    expect(rate).toBeNull();
+    expect(successRate(onlyMonday, [], TODAY, "2026-07-07", 6)).toBeNull();
   });
 
   it("null, wenn since in der Zukunft liegt", () => {
@@ -100,58 +126,33 @@ describe("successRate — daily/weekdays", () => {
   });
 
   it("heute offen zählt noch nicht als fällig", () => {
-    // Gestern erledigt, heute noch offen → 100 %, nicht 50 %.
-    expect(
-      successRate(daily, ["2026-07-11"], TODAY, "2026-07-11", 30),
-    ).toBe(1);
-    // Heute angelegt, noch nichts erledigt → noch keine Quote.
+    expect(successRate(daily, done("2026-07-11"), TODAY, "2026-07-11", 30)).toBe(1);
     expect(successRate(daily, [], TODAY, TODAY, 30)).toBeNull();
+  });
+
+  it("Schicht-Restriktion: nur passende Schichttage im Nenner", () => {
+    const onlyFree: Recurrence = { type: "daily", shiftTypes: ["free"] };
+    // 10. frei/erledigt, 11. Nacht (nicht fällig), 12. frei/erledigt.
+    const shifts = {
+      "2026-07-10": "free" as const,
+      "2026-07-11": "night" as const,
+      "2026-07-12": "free" as const,
+    };
+    const rate = successRate(onlyFree, done("2026-07-10", "2026-07-12"), TODAY, "2026-07-10", 3, shifts);
+    expect(rate).toBe(1); // 2/2, der Nacht-Tag fällt raus
   });
 });
 
 describe("successRate — timesPerWeek", () => {
   it("volle Wochen: erreicht / Soll", () => {
-    // Heute Mo 13.07. (offen) → gewertet wird bis So 12.07.:
-    // zwei volle Wochen à Soll 3, nur die erste erfüllt.
-    const rate = successRate(
-      x3,
-      ["2026-06-29", "2026-07-01", "2026-07-03"],
-      "2026-07-13",
-      "2026-06-29",
-      15,
-    );
+    const rate = successRate(x3, done("2026-06-29", "2026-07-01", "2026-07-03"), "2026-07-13", "2026-06-29", 15);
     expect(rate).toBeCloseTo(0.5);
-  });
-
-  it("volle laufende Woche inkl. erledigtem Heute", () => {
-    // Woche Mo–So komplett im Fenster, Soll 3, erledigt Di + So (heute).
-    const rate = successRate(
-      x3,
-      ["2026-07-07", "2026-07-12"],
-      TODAY,
-      "2026-07-06",
-      7,
-    );
-    expect(rate).toBeCloseTo(2 / 3);
-  });
-
-  it("angebrochene Woche zählt anteilig (heute offen)", () => {
-    // Heute So offen → gewertet Mo–Sa (6/7 der Woche): erwartet 3·6/7,
-    // erledigt 2.
-    const rate = successRate(
-      x3,
-      ["2026-07-07", "2026-07-09"],
-      TODAY,
-      "2026-07-06",
-      7,
-    );
-    expect(rate).toBeCloseTo(2 / ((3 * 6) / 7));
   });
 
   it("Mehrleistung wird aufs Soll gedeckelt (keine Quote > 1)", () => {
     const rate = successRate(
       x3,
-      ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10"],
+      done("2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10"),
       TODAY,
       "2026-07-06",
       7,

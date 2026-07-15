@@ -11,18 +11,38 @@ export const WEEKDAY_SHORT: Record<IsoWeekday, string> = {
   7: "So",
 };
 
+export const HABIT_CATEGORY_LABEL: Record<
+  "sleep" | "nutrition" | "movement" | "recovery" | "mind",
+  string
+> = {
+  sleep: "Schlaf",
+  nutrition: "Ernährung",
+  movement: "Bewegung",
+  recovery: "Erholung",
+  mind: "Mentales",
+};
+
 export function recurrenceLabel(recurrence: Recurrence): string {
-  switch (recurrence.type) {
-    case "daily":
-      return "Täglich";
-    case "timesPerWeek":
-      return `${recurrence.times}× pro Woche`;
-    case "weekdays":
-      return [...recurrence.weekdays]
-        .sort((a, b) => a - b)
-        .map((d) => WEEKDAY_SHORT[d])
-        .join(" · ");
+  const base = (() => {
+    switch (recurrence.type) {
+      case "daily":
+        return "Täglich";
+      case "timesPerWeek":
+        return `${recurrence.times}× pro Woche`;
+      case "weekdays":
+        return [...recurrence.weekdays]
+          .sort((a, b) => a - b)
+          .map((d) => WEEKDAY_SHORT[d])
+          .join(" · ");
+    }
+  })();
+  if (recurrence.shiftTypes && recurrence.shiftTypes.length > 0) {
+    const shifts = recurrence.shiftTypes
+      .map((s) => SHIFT_TYPE_LABEL[s])
+      .join("/");
+    return `${base} · nur ${shifts}`;
   }
+  return base;
 }
 
 export function streakLabel(streak: Streak): string {

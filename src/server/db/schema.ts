@@ -17,15 +17,34 @@ const createdAt = () =>
     .notNull()
     .$defaultFn(() => new Date().toISOString());
 
+export type HabitCategory =
+  | "sleep"
+  | "nutrition"
+  | "movement"
+  | "recovery"
+  | "mind";
+
+export type HabitReminder =
+  | { type: "time"; time: string } // "HH:MM"
+  | { type: "shiftRelative"; event: "beforeStart" | "afterEnd"; minutes: number };
+
 export const habits = sqliteTable("habits", {
   id: id(),
   name: text("name").notNull(),
+  // Auslöser / Implementation Intention (Habit-Spec 2.1) — Pflichtfeld.
+  cue: text("cue").notNull(),
+  // Habit Stacking (2.2): bestehende Routine oder Schicht-Ereignis.
+  stackedOn: text("stacked_on"),
   description: text("description"),
   recurrence: text("recurrence", { mode: "json" })
     .$type<Recurrence>()
     .notNull(),
+  // Zwei-Level-Ziel (2.4): Minimum (nicht verhandelbar) + Ziel.
+  minValue: real("min_value"),
   targetValue: real("target_value"),
   unit: text("unit"),
+  category: text("category").$type<HabitCategory>(),
+  reminder: text("reminder", { mode: "json" }).$type<HabitReminder>(),
   color: text("color").notNull().default("primary"),
   createdAt: createdAt(),
   archivedAt: text("archived_at"),
@@ -39,6 +58,11 @@ export const habitCompletions = sqliteTable(
       .notNull()
       .references(() => habits.id, { onDelete: "cascade" }),
     date: text("date").notNull(), // YYYY-MM-DD, Europe/Berlin
+    // Skip ≠ Fail (2.5): verpasst = kein Eintrag (wird berechnet).
+    status: text("status", { enum: ["done", "skipped"] })
+      .notNull()
+      .default("done"),
+    skipReason: text("skip_reason"),
     value: real("value"),
     note: text("note"),
     createdAt: createdAt(),

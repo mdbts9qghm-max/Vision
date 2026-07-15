@@ -25,8 +25,14 @@ export default async function EditHabitPage({
         submitLabel="Speichern"
         initial={{
           name: habit.name,
+          cue: habit.cue,
+          stackedOn: habit.stackedOn ?? undefined,
+          category: habit.category ?? undefined,
           description: habit.description ?? undefined,
           recurrence: habit.recurrence,
+          minValue: habit.minValue ?? undefined,
+          targetValue: habit.targetValue ?? undefined,
+          unit: habit.unit ?? undefined,
         }}
         onSubmit={updateHabit.bind(null, habit.id)}
       />

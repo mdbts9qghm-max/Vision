@@ -3,14 +3,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Flame, Pencil } from "lucide-react";
 import { getHabitsWithCompletions } from "@/server/queries/habits";
-import { toISODate, todayISO } from "@/domain/dates";
-import { isDueOn } from "@/domain/recurrence";
+import { getShiftMap } from "@/server/queries/coach";
+import { addDaysISO, toISODate, todayISO } from "@/domain/dates";
+import { isDueOn, shiftOn } from "@/domain/recurrence";
 import { successRate, weeklyProgress } from "@/domain/scoring";
 import { computeStreak } from "@/domain/streaks";
 import { weeklyHistory } from "@/domain/history";
-import { percentLabel, recurrenceLabel, streakLabel } from "@/lib/labels";
+import {
+  HABIT_CATEGORY_LABEL,
+  percentLabel,
+  recurrenceLabel,
+  streakLabel,
+} from "@/lib/labels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckButton } from "@/components/habits/check-button";
+import { SkipButton } from "@/components/habits/skip-button";
 import { HabitWeeksChart } from "@/components/habits/habit-weeks-chart";
 
 export const metadata: Metadata = { title: "Gewohnheit — Vision" };
@@ -21,31 +28,36 @@ export default async function HabitDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const all = await getHabitsWithCompletions();
+  const today = todayISO();
+  const [all, shifts] = await Promise.all([
+    getHabitsWithCompletions(),
+    getShiftMap(addDaysISO(today, -90), today),
+  ]);
   const item = all.find((h) => h.habit.id === id);
   if (!item) notFound();
-  const { habit, completedDates } = item;
+  const { habit, completions } = item;
 
-  const today = todayISO();
-  const doneToday = completedDates.includes(today);
-  const streak = computeStreak(habit.recurrence, completedDates, today);
-  const week = weeklyProgress(habit.recurrence, completedDates, today);
-  const rate30 = successRate(
-    habit.recurrence,
-    completedDates,
-    today,
-    toISODate(new Date(habit.createdAt)),
-  );
-  const history = weeklyHistory(habit.recurrence, completedDates, today, 12);
+  const todayEntry = completions.find((c) => c.date === today);
+  const doneToday = todayEntry?.status === "done";
+  const skippedToday = todayEntry?.status === "skipped";
+  const streak = computeStreak(habit.recurrence, completions, today, shifts);
+  const week = weeklyProgress(habit.recurrence, completions, today, shifts);
+  const since = toISODate(new Date(habit.createdAt));
+  const rate7 = successRate(habit.recurrence, completions, today, since, 7, shifts);
+  const rate30 = successRate(habit.recurrence, completions, today, since, 30, shifts);
+  const history = weeklyHistory(habit.recurrence, completions, today, 12, shifts);
+  const dueToday = isDueOn(habit.recurrence, today, shiftOn(shifts, today));
 
   return (
     <div className="space-y-6">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight">{habit.name}</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">{habit.cue}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {recurrenceLabel(habit.recurrence)}
-            {habit.description ? ` · ${habit.description}` : ""}
+            {habit.category ? ` · ${HABIT_CATEGORY_LABEL[habit.category]}` : ""}
+            {habit.stackedOn ? ` · ${habit.stackedOn}` : ""}
           </p>
         </div>
         <Link
@@ -57,7 +69,7 @@ export default async function HabitDetailPage({
         </Link>
       </header>
 
-      {isDueOn(habit.recurrence, today) && !habit.archivedAt ? (
+      {dueToday && !habit.archivedAt ? (
         <div className="flex items-center gap-4 rounded-xl border border-border px-4 py-3">
           <CheckButton
             habitId={habit.id}
@@ -65,28 +77,47 @@ export default async function HabitDetailPage({
             done={doneToday}
             label={habit.name}
           />
-          <p className="text-sm text-muted-foreground">
-            {doneToday ? "Heute erledigt" : "Heute noch offen"} · {week.done}/
-            {week.target} diese Woche
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-muted-foreground">
+              {doneToday
+                ? "Heute erledigt"
+                : skippedToday
+                  ? "Heute bewusst übersprungen"
+                  : "Heute noch offen"}{" "}
+              · {week.done}/{week.target} diese Woche
+            </p>
+          </div>
+          <SkipButton
+            habitId={habit.id}
+            date={today}
+            skipped={skippedToday}
+            label={habit.name}
+          />
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Erfolgsquote ist die Hauptmetrik; Streak sekundär. */}
+      <div className="grid grid-cols-3 gap-3">
         <Card>
           <CardContent className="py-4 text-center">
-            <p className="flex items-center justify-center gap-1 text-lg font-semibold">
-              <Flame className="size-4 text-primary" aria-hidden />
-              {streakLabel(streak)}
-            </p>
-            <p className="text-xs text-muted-foreground">Streak</p>
+            <p className="text-lg font-semibold">{percentLabel(rate7)}</p>
+            <p className="text-xs text-muted-foreground">Quote 7 Tage</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4 text-center">
             <p className="text-lg font-semibold">{percentLabel(rate30)}</p>
+            <p className="text-xs text-muted-foreground">Quote 30 Tage</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-4 text-center">
+            <p className="flex items-center justify-center gap-1 text-lg font-semibold">
+              <Flame className="size-4 text-primary/70" aria-hidden />
+              {streak.value}
+            </p>
             <p className="text-xs text-muted-foreground">
-              Erfolgsquote (30 Tage)
+              {streakLabel(streak).split(" ")[1]}-Streak
             </p>
           </CardContent>
         </Card>

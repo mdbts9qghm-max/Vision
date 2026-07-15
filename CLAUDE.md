@@ -73,9 +73,18 @@ als Zähler gespeichert (verhindert Inkonsistenzen bei Nachträgen).
 
 ## Datenmodell (Kern)
 
-- **habits**: id, name, description, recurrence (JSON: daily | timesPerWeek(n) | weekdays[]), targetValue?, unit?, color, archivedAt?
-- **habit_completions**: id, habitId, date (YYYY-MM-DD), value?, note?
-  — Unique-Constraint auf (habitId, date)
+- **habits**: id, name, **cue (NOT NULL, Auslöser/Implementation Intention)**,
+  stackedOn?, description, recurrence (JSON: daily | timesPerWeek(n) |
+  weekdays[], **+ shiftTypes?[] = nur an bestimmten Schichtarten fällig**),
+  minValue?/targetValue?/unit? (Zwei-Level-Ziel), category? (sleep | nutrition
+  | movement | recovery | mind), reminder? (time | shiftRelative), color,
+  archivedAt?
+- **habit_completions**: id, habitId, date (YYYY-MM-DD), **status (done |
+  skipped; verpasst = kein Eintrag)**, skipReason?, value?, note?
+  — Unique-Constraint auf (habitId, date). Skip ≠ Fail: Skips werden aus dem
+  Quoten-Nenner genommen (rate = done / (due − skipped)) und brechen den
+  Streak nicht. Erfolgsquote (7/30 T) ist Hauptmetrik, Streak sekundär.
+  Aktive Gewohnheiten: Warnung ab >5 (Habit-Bildung braucht ~66 Tage).
 - **goals**: id, title, why, deadline?, priority, status, createdAt
 - **milestones**: id, goalId, title, dueDate?, completedAt?, sortOrder
 - **metrics**: id, type (weight | steps | sleep | custom), date, value, unit
