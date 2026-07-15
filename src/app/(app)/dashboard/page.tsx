@@ -5,6 +5,7 @@ import { logout } from "@/server/actions/auth";
 import { loadDashboard } from "@/server/queries/dashboard";
 import { adjustSession } from "@/domain/readiness";
 import {
+  USER_TIME_ZONE,
   diffDaysISO,
   formatLongDate,
   todayISO,
@@ -13,6 +14,7 @@ import {
 import { phaseForWeek } from "@/domain/coach";
 import { isDueOn, shiftOn } from "@/domain/recurrence";
 import { overallWeeklyProgress, weeklyProgress } from "@/domain/scoring";
+import { greetingFor } from "@/lib/greeting";
 import { recurrenceLabel } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +24,7 @@ import { SkipButton } from "@/components/habits/skip-button";
 import { FocusCard } from "@/components/dashboard/focus-card";
 import { ShiftContext } from "@/components/dashboard/shift-context";
 import { TodayTrainingCard } from "@/components/dashboard/today-training";
-import { ReadinessCheck } from "@/components/dashboard/readiness-check";
+import { RecoveryCard } from "@/components/dashboard/recovery-card";
 import { WeekCard } from "@/components/dashboard/week-card";
 import { ActiveGoalCard } from "@/components/dashboard/active-goal";
 import { QuickLog } from "@/components/dashboard/quick-log";
@@ -98,13 +100,23 @@ export default async function DashboardPage() {
         (a.goal.deadline ?? "9999").localeCompare(b.goal.deadline ?? "9999"),
     )[0];
 
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: USER_TIME_ZONE,
+      hour: "2-digit",
+      hour12: false,
+    }).format(new Date()),
+  );
+
   return (
     <div className="space-y-5">
-      <header className="space-y-1.5">
+      <header className="space-y-2 rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-card px-4 py-4">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Heute</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {greetingFor(hour)}
+            </h1>
+            <p className="text-sm capitalize text-muted-foreground">
               {formatLongDate(today)}
             </p>
           </div>
@@ -183,7 +195,11 @@ export default async function DashboardPage() {
         <TodayTrainingCard session={todaySession} adjusted={adjusted} />
       ) : null}
 
-      <ReadinessCheck value={signals.readiness} />
+      <RecoveryCard
+        recoveryPct={metricsToday.recovery}
+        sleepHours={metricsToday.sleep}
+        readiness={signals.readiness}
+      />
 
       <WeekCard
         isStartblock={isStartblock}
