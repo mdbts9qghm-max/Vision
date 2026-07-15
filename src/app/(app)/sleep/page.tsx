@@ -7,16 +7,16 @@ import { formatLongDate, todayISO } from "@/domain/dates";
 import { RECOVERY_RED_BELOW } from "@/domain/readiness";
 import { SHIFT_TIME_LABEL, SHIFT_TYPE_LABEL } from "@/lib/labels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Ring } from "@/components/ui/ring";
 import { DayTimeline } from "@/components/sleep/day-timeline";
 
 export const metadata: Metadata = { title: "Schlaf — Vision" };
 
 function recoveryTone(pct: number): { label: string; className: string } {
   if (pct < RECOVERY_RED_BELOW)
-    return { label: "rot — Erholung priorisieren", className: "text-destructive" };
-  if (pct < 67)
-    return { label: "gelb — moderat", className: "text-amber-500" };
-  return { label: "grün — bereit", className: "text-emerald-500" };
+    return { label: "Erholung priorisieren", className: "text-destructive" };
+  if (pct < 67) return { label: "moderat", className: "text-amber-500" };
+  return { label: "bereit", className: "text-emerald-500" };
 }
 
 export default async function SleepPage() {
@@ -35,7 +35,7 @@ export default async function SleepPage() {
 
   return (
     <div className="space-y-5">
-      <header className="space-y-1">
+      <header className="space-y-2 rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-card px-4 py-4">
         <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
           <Moon className="size-6 text-primary" aria-hidden />
           Schlaf
@@ -45,17 +45,38 @@ export default async function SleepPage() {
 
       {/* Heutige Erholung */}
       <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-4 text-sm">
-          <div>
-            <p className="text-muted-foreground">Schlaf letzte Nacht</p>
-            <p className="font-medium">
-              {sleepHours !== undefined ? `${sleepHours} h` : "– (im Heute-Tab eintragen)"}
+        <CardContent className="flex items-center gap-4 py-4">
+          {recoveryPct !== undefined ? (
+            <Ring
+              value={recoveryPct}
+              max={100}
+              size={76}
+              colorClass={rec?.className}
+              ariaLabel={`Recovery ${recoveryPct} Prozent`}
+            >
+              <span className="text-lg font-bold leading-none">
+                {recoveryPct}
+                <span className="text-xs font-medium">%</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground">Recovery</span>
+            </Ring>
+          ) : (
+            <Ring value={0} max={100} size={76} ariaLabel="Keine Recovery-Daten">
+              <span className="text-xs text-muted-foreground">–</span>
+            </Ring>
+          )}
+          <div className="min-w-0 flex-1 space-y-1 text-sm">
+            <p className="font-medium">Erholung heute</p>
+            <p className="text-muted-foreground">
+              Schlaf:{" "}
+              <span className="text-foreground">
+                {sleepHours !== undefined ? `${sleepHours} h` : "–"}
+              </span>
             </p>
-          </div>
-          <div className="text-right">
-            <p className="text-muted-foreground">WHOOP-Recovery</p>
-            <p className={rec ? `font-medium ${rec.className}` : "font-medium"}>
-              {recoveryPct !== undefined ? `${recoveryPct} % · ${rec?.label}` : "–"}
+            <p className={rec ? rec.className : "text-muted-foreground"}>
+              {recoveryPct !== undefined
+                ? `Recovery ${recoveryPct} % — ${rec?.label}`
+                : "WHOOP-Werte im Heute-Tab eintragen"}
             </p>
           </div>
         </CardContent>

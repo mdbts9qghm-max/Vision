@@ -6,6 +6,7 @@ import { loadCoachPage } from "@/server/queries/coach";
 import { regeneratePlan } from "@/server/actions/coach";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Ring } from "@/components/ui/ring";
 import { PlanDay } from "@/components/coach/plan-day";
 import { WeightChart } from "@/components/fitness/weight-chart";
 import { WorkoutForm } from "@/components/fitness/workout-form";
@@ -54,15 +55,10 @@ export default async function CoachPage() {
       (s.kind === "longrun" || s.kind === "run" || s.kind === "easy"),
   ).length;
   const runTarget = isStartblock ? 3 : plannedRuns;
-  const ratio = isStartblock
-    ? Math.min(weekActuals.runCount / Math.max(runTarget, 1), 1)
-    : weekPlannedKm > 0
-      ? Math.min(weekActuals.km / weekPlannedKm, 1)
-      : 0;
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
+      <header className="space-y-2 rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-card px-4 py-4">
         <h1 className="text-2xl font-bold tracking-tight">Coach</h1>
         <p className="text-sm text-muted-foreground">
           Woche {weekIndex + 1} · Phase: {PHASE_LABEL[phase]}
@@ -73,38 +69,36 @@ export default async function CoachPage() {
       </header>
 
       <Card>
-        <CardContent className="space-y-2 py-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
-            <span className="font-medium">Diese Woche</span>
-            <span className="text-muted-foreground">
-              {isStartblock
-                ? `Läufe ${weekActuals.runCount}/${runTarget} · Kraft ${weekActuals.gymCount}×`
-                : `${Math.round(weekActuals.km * 10) / 10}/${weekPlannedKm} km · Kraft ${weekActuals.gymCount}×`}
-            </span>
-          </div>
-          <div
-            role="progressbar"
-            aria-valuenow={
-              isStartblock ? weekActuals.runCount : Math.round(weekActuals.km)
-            }
-            aria-valuemin={0}
-            aria-valuemax={
-              isStartblock
-                ? Math.max(runTarget, 1)
-                : Math.max(Math.round(weekPlannedKm), 1)
-            }
-            className="h-2 overflow-hidden rounded-full bg-muted"
+        <CardContent className="flex items-center gap-4 py-4">
+          <Ring
+            value={isStartblock ? weekActuals.runCount : weekActuals.km}
+            max={isStartblock ? Math.max(runTarget, 1) : Math.max(weekPlannedKm, 1)}
+            size={76}
+            ariaLabel="Wochenfortschritt"
           >
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-500"
-              style={{ width: `${ratio * 100}%` }}
-            />
+            <span className="text-lg font-bold leading-none">
+              {isStartblock
+                ? weekActuals.runCount
+                : Math.round(weekActuals.km * 10) / 10}
+            </span>
+            <span className="text-[10px] text-muted-foreground">
+              {isStartblock ? "Läufe" : "km"}
+            </span>
+          </Ring>
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-sm font-medium">Diese Woche</p>
+            <p className="text-sm text-muted-foreground">
+              {isStartblock
+                ? `${weekActuals.runCount}/${runTarget} Läufe`
+                : `${Math.round(weekActuals.km * 10) / 10}/${weekPlannedKm} km`}{" "}
+              · Kraft {weekActuals.gymCount}×
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isStartblock
+                ? "Run-Walk zählt voll — Zone 3+ ist tabu, Talk-Test."
+                : "Kilometer kommen aus dem Logbuch (Distanz beim Loggen)."}
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {isStartblock
-              ? "Run-Walk zählt voll: jede geloggte Einheit (außer Kraft) ist ein Lauf. Zone 3+ ist tabu — Talk-Test."
-              : "Kilometer zählen aus dem Trainings-Log (Distanz-Feld beim Loggen ausfüllen)."}
-          </p>
         </CardContent>
       </Card>
 
