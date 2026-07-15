@@ -59,6 +59,18 @@ export const SHIFT_TYPE_LABEL: Record<
   v: "V-Schicht",
 };
 
+/** Kernzeiten je Schichtart — V-Schicht liegt willkürlich. */
+export const SHIFT_TIME_LABEL: Record<
+  "day" | "night" | "sleep" | "free" | "v",
+  string
+> = {
+  day: "07:00–19:00",
+  night: "19:00–07:00 · Vorschlaf ~14–17 Uhr",
+  sleep: "Schlaf bis ~14:00, danach frei",
+  free: "ganzer Tag frei",
+  v: "≈08:00–20:00 (variabel)",
+};
+
 export const SESSION_KIND_LABEL: Record<
   "longrun" | "run" | "easy" | "gym" | "mobility" | "rest",
   string

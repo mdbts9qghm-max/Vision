@@ -53,5 +53,7 @@ export async function upsertMetric(input: {
       set: { value },
     });
   revalidatePath("/fitness");
+  // Quick-Log auf dem Dashboard; Schlaf speist die Autoregulation.
+  revalidatePath("/dashboard");
   return {};
 }
