@@ -23,8 +23,7 @@ export function QuickLog({
 }) {
   return (
     <Card>
-      <CardContent className="space-y-3 py-4">
-        <p className="text-sm font-medium">Quick-Log · WHOOP & Gewicht</p>
+      <CardContent className="py-4">
         <div className="grid grid-cols-2 gap-3">
           <MetricInput
             type="sleep"

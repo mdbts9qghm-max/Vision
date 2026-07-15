@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LogOut } from "lucide-react";
+import { Activity, LogOut, PlusCircle, Sun, TrendingUp } from "lucide-react";
 import { logout } from "@/server/actions/auth";
 import { loadDashboard } from "@/server/queries/dashboard";
 import { adjustSession } from "@/domain/readiness";
@@ -24,6 +24,7 @@ import { SkipButton } from "@/components/habits/skip-button";
 import { ValueStepper } from "@/components/habits/value-stepper";
 import { habitStep, isMeasureHabit } from "@/lib/habit-ui";
 import { FocusCard } from "@/components/dashboard/focus-card";
+import { SectionLabel } from "@/components/dashboard/section-label";
 import { ShiftContext } from "@/components/dashboard/shift-context";
 import { TodayTrainingCard } from "@/components/dashboard/today-training";
 import { RecoveryCard } from "@/components/dashboard/recovery-card";
@@ -138,24 +139,49 @@ export default async function DashboardPage() {
 
       <FocusCard key={focus ?? "none"} initialFocus={focus} />
 
-      {active.length === 0 ? (
-        <EmptyState
-          title="Noch keine Gewohnheiten"
-          description="Sobald du Gewohnheiten angelegt hast, hakst du sie hier mit einem Tap ab."
-          action={
-            <Button asChild>
-              <Link href="/habits/new">Erste Gewohnheit anlegen</Link>
-            </Button>
-          }
+      {/* Erholung — wie geht es mir heute? */}
+      <section className="space-y-2">
+        <SectionLabel icon={<Activity className="size-3.5" aria-hidden />}>
+          Erholung
+        </SectionLabel>
+        <RecoveryCard
+          recoveryPct={metricsToday.recovery}
+          sleepHours={metricsToday.sleep}
+          readiness={signals.readiness}
         />
-      ) : dueToday.length > 0 ? (
-        <section className="space-y-3">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            {openCount === 0
-              ? "Alles erledigt — stark."
-              : `Heute fällig (${openCount} offen)`}
-          </h2>
-          {sortedDue.map(({ habit, completions }) => {
+      </section>
+
+      {/* Heute — was steht an? */}
+      <section className="space-y-3">
+        <SectionLabel
+          icon={<Sun className="size-3.5" aria-hidden />}
+          action={
+            dueToday.length > 0 ? (
+              <span className="text-xs font-medium text-muted-foreground">
+                {openCount === 0 ? "alles erledigt ✓" : `${openCount} offen`}
+              </span>
+            ) : null
+          }
+        >
+          Heute
+        </SectionLabel>
+
+        {todaySession && adjusted ? (
+          <TodayTrainingCard session={todaySession} adjusted={adjusted} />
+        ) : null}
+
+        {active.length === 0 ? (
+          <EmptyState
+            title="Noch keine Gewohnheiten"
+            description="Sobald du Gewohnheiten angelegt hast, hakst du sie hier mit einem Tap ab."
+            action={
+              <Button asChild>
+                <Link href="/habits/new">Erste Gewohnheit anlegen</Link>
+              </Button>
+            }
+          />
+        ) : dueToday.length > 0 ? (
+          sortedDue.map(({ habit, completions }) => {
             const entry = completions.find((c) => c.date === today);
             const status = entry?.status;
             const week = weeklyProgress(
@@ -212,49 +238,54 @@ export default async function DashboardPage() {
                 </CardContent>
               </Card>
             );
-          })}
-        </section>
-      ) : null}
+          })
+        ) : (
+          <p className="px-1 text-sm text-muted-foreground">
+            Heute ist keine Gewohnheit fällig.
+          </p>
+        )}
+      </section>
 
-      {todaySession && adjusted ? (
-        <TodayTrainingCard session={todaySession} adjusted={adjusted} />
-      ) : null}
-
-      <RecoveryCard
-        recoveryPct={metricsToday.recovery}
-        sleepHours={metricsToday.sleep}
-        readiness={signals.readiness}
-      />
-
-      <WeekCard
-        isStartblock={isStartblock}
-        runCount={weekActuals.runCount}
-        runTarget={3}
-        kmActual={weekActuals.km}
-        kmPlanned={weekPlannedKm}
-        habits={habitsWeek}
-      />
-
-      <div className="space-y-1">
+      {/* Fortschritt — wo stehe ich? */}
+      <section className="space-y-3">
+        <SectionLabel
+          icon={<TrendingUp className="size-3.5" aria-hidden />}
+          action={
+            <Link
+              href="/goals"
+              className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            >
+              {mainGoal ? "Alle Ziele" : "Ziele verwalten"}
+            </Link>
+          }
+        >
+          Fortschritt
+        </SectionLabel>
+        <WeekCard
+          isStartblock={isStartblock}
+          runCount={weekActuals.runCount}
+          runTarget={3}
+          kmActual={weekActuals.km}
+          kmPlanned={weekPlannedKm}
+          habits={habitsWeek}
+        />
         {mainGoal ? <ActiveGoalCard item={mainGoal} today={today} /> : null}
-        <div className="text-right">
-          <Link
-            href="/goals"
-            className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
-          >
-            {mainGoal ? "Alle Ziele" : "Ziele verwalten"}
-          </Link>
-        </div>
-      </div>
+      </section>
 
-      <QuickLog
-        weightToday={metricsToday.weight}
-        sleepToday={metricsToday.sleep}
-        recoveryToday={metricsToday.recovery}
-        hrvToday={metricsToday.hrv}
-        rhrToday={metricsToday.rhr}
-        stepsToday={metricsToday.steps}
-      />
+      {/* Erfassen */}
+      <section className="space-y-2">
+        <SectionLabel icon={<PlusCircle className="size-3.5" aria-hidden />}>
+          Erfassen
+        </SectionLabel>
+        <QuickLog
+          weightToday={metricsToday.weight}
+          sleepToday={metricsToday.sleep}
+          recoveryToday={metricsToday.recovery}
+          hrvToday={metricsToday.hrv}
+          rhrToday={metricsToday.rhr}
+          stepsToday={metricsToday.steps}
+        />
+      </section>
     </div>
   );
 }
