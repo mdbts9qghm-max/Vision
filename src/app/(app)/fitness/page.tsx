@@ -40,7 +40,7 @@ export default async function FitnessPage() {
       <h1 className="text-2xl font-bold tracking-tight">Fitness</h1>
 
       <Card>
-        <CardHeader className="flex-row items-baseline justify-between">
+        <CardHeader className="flex-row flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <CardTitle>Gewicht</CardTitle>
           {latestTrend !== undefined ? (
             <span className="text-sm text-muted-foreground">
@@ -105,7 +105,7 @@ export default async function FitnessPage() {
       </Card>
 
       <Card>
-        <CardHeader className="flex-row items-baseline justify-between">
+        <CardHeader className="flex-row flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <CardTitle>Training</CardTitle>
           <span className="text-sm text-muted-foreground">
             {weekWorkouts.length}× · {weekMinutes} Min. diese Woche

@@ -94,7 +94,7 @@ export function WorkoutForm() {
         />
       ) : null}
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 min-[400px]:grid-cols-3">
         <div className="space-y-1">
           <Label htmlFor="workout-duration" className="text-xs text-muted-foreground">
             Dauer (Min.)

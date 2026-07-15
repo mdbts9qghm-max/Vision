@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Login — Vision" };
 
 export default function LoginPage() {
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
+    <main className="flex flex-1 items-center justify-center p-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <div className="w-full max-w-sm space-y-8">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold tracking-tight">Vision</h1>

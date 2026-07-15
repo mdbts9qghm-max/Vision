@@ -71,7 +71,7 @@ export default async function CoachPage() {
 
       <Card>
         <CardContent className="space-y-2 py-4">
-          <div className="flex items-baseline justify-between text-sm">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
             <span className="font-medium">Diese Woche</span>
             <span className="text-muted-foreground">
               {isStartblock

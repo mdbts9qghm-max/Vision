@@ -16,9 +16,13 @@ export function ReadinessCheck({ value }: { value: ReadinessScore | null }) {
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-border px-4 py-3">
       <p className="text-sm text-muted-foreground">Wie erholt bist du?</p>
-      <div className="flex gap-1.5" role="radiogroup" aria-label="Erholungs-Check">
+      <div
+        className="flex shrink-0 gap-1.5"
+        role="radiogroup"
+        aria-label="Erholungs-Check"
+      >
         {OPTIONS.map((o) => (
           <button
             key={o.value}

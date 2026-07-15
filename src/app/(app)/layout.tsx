@@ -9,7 +9,8 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-24 pt-6">
+      {/* Safe-Areas: oben Notch/Statusleiste, unten Home-Indicator + TabBar. */}
+      <main className="mx-auto w-full max-w-lg flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-[max(1.5rem,calc(env(safe-area-inset-top)+0.5rem))]">
         {children}
       </main>
       <TabBar />

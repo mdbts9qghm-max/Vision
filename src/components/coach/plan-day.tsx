@@ -2,7 +2,7 @@ import { Activity, BedDouble, Dumbbell, Footprints, Mountain } from "lucide-reac
 import type { PlannedSession } from "@/server/queries/coach";
 import type { ShiftType } from "@/domain/coach";
 import { SESSION_KIND_LABEL } from "@/lib/labels";
-import { formatLongDate } from "@/domain/dates";
+import { formatDayShort } from "@/domain/dates";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShiftSelect } from "./shift-select";
@@ -35,11 +35,13 @@ export function PlanDay({
     <Card className={cn(isToday && "border-primary/50")}>
       <CardContent className="space-y-2 py-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-sm font-medium">
+          <p className="min-w-0 truncate text-sm font-medium">
             {isToday ? "Heute · " : ""}
-            {formatLongDate(date)}
+            {formatDayShort(date)}
           </p>
-          <ShiftSelect date={date} value={shift} />
+          <div className="shrink-0">
+            <ShiftSelect date={date} value={shift} />
+          </div>
         </div>
         {session ? (
           <div className="flex items-start gap-3">

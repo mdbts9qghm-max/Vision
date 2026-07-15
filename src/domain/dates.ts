@@ -64,6 +64,22 @@ export function weekStartISO(iso: string): string {
   return addDaysISO(iso, 1 - isoWeekday(iso));
 }
 
+/** Kompaktes deutsches Datum, z.B. "Mo 13.7." — für enge mobile Zeilen. */
+export function formatDayShort(
+  iso: string,
+  timeZone: string = USER_TIME_ZONE,
+): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d, 12));
+  const weekday = new Intl.DateTimeFormat("de-DE", {
+    timeZone,
+    weekday: "short",
+  })
+    .format(date)
+    .replace(".", "");
+  return `${weekday} ${d}.${m}.`;
+}
+
 /** Lesbares deutsches Datum, z.B. "Sonntag, 12. Juli". */
 export function formatLongDate(
   iso: string,

@@ -45,7 +45,7 @@ export function HabitCard({ item }: { item: HabitWithCompletions }) {
             {recurrenceLabel(habit.recurrence)} · {week.done}/{week.target}{" "}
             diese Woche
           </p>
-          <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               <Flame className="size-3.5 text-primary" aria-hidden />
               {streakLabel(streak)}
