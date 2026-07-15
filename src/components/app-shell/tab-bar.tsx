@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarRange, LayoutDashboard, Repeat, Target } from "lucide-react";
+import { CalendarRange, LayoutDashboard, Moon, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/dashboard", label: "Heute", icon: LayoutDashboard },
   { href: "/habits", label: "Habits", icon: Repeat },
   { href: "/coach", label: "Coach", icon: CalendarRange },
-  { href: "/goals", label: "Ziele", icon: Target },
+  { href: "/sleep", label: "Schlaf", icon: Moon },
 ] as const;
 
 export function TabBar() {

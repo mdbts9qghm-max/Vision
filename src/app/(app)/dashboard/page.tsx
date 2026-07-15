@@ -194,7 +194,17 @@ export default async function DashboardPage() {
         habits={habitsWeek}
       />
 
-      {mainGoal ? <ActiveGoalCard item={mainGoal} today={today} /> : null}
+      <div className="space-y-1">
+        {mainGoal ? <ActiveGoalCard item={mainGoal} today={today} /> : null}
+        <div className="text-right">
+          <Link
+            href="/goals"
+            className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+          >
+            {mainGoal ? "Alle Ziele" : "Ziele verwalten"}
+          </Link>
+        </div>
+      </div>
 
       <QuickLog
         weightToday={metricsToday.weight}
