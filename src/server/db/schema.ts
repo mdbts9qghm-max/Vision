@@ -60,7 +60,8 @@ export const habitCompletions = sqliteTable(
       .references(() => habits.id, { onDelete: "cascade" }),
     date: text("date").notNull(), // YYYY-MM-DD, Europe/Berlin
     // Skip ≠ Fail (2.5): verpasst = kein Eintrag (wird berechnet).
-    status: text("status", { enum: ["done", "skipped"] })
+    // "partial": Wert geloggt, Minimum noch nicht erreicht.
+    status: text("status", { enum: ["done", "skipped", "partial"] })
       .notNull()
       .default("done"),
     skipReason: text("skip_reason"),

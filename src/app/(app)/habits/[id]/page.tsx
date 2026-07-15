@@ -15,9 +15,11 @@ import {
   recurrenceLabel,
   streakLabel,
 } from "@/lib/labels";
+import { habitStep, isMeasureHabit } from "@/lib/habit-ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckButton } from "@/components/habits/check-button";
 import { SkipButton } from "@/components/habits/skip-button";
+import { ValueStepper } from "@/components/habits/value-stepper";
 import { HabitWeeksChart } from "@/components/habits/habit-weeks-chart";
 
 export const metadata: Metadata = { title: "Gewohnheit — Vision" };
@@ -70,29 +72,50 @@ export default async function HabitDetailPage({
       </header>
 
       {dueToday && !habit.archivedAt ? (
-        <div className="flex items-center gap-4 rounded-xl border border-border px-4 py-3">
-          <CheckButton
-            habitId={habit.id}
-            date={today}
-            done={doneToday}
-            label={habit.name}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted-foreground">
-              {doneToday
-                ? "Heute erledigt"
-                : skippedToday
-                  ? "Heute bewusst übersprungen"
-                  : "Heute noch offen"}{" "}
-              · {week.done}/{week.target} diese Woche
-            </p>
+        <div className="space-y-3 rounded-xl border border-border px-4 py-3">
+          <div className="flex items-center gap-4">
+            {isMeasureHabit(habit) ? (
+              <span
+                className="size-2.5 shrink-0 rounded-full bg-primary/70"
+                aria-hidden
+              />
+            ) : (
+              <CheckButton
+                habitId={habit.id}
+                date={today}
+                done={doneToday}
+                label={habit.name}
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-muted-foreground">
+                {doneToday
+                  ? "Heute erledigt"
+                  : skippedToday
+                    ? "Heute bewusst übersprungen"
+                    : "Heute noch offen"}{" "}
+                · {week.done}/{week.target} diese Woche
+              </p>
+            </div>
+            <SkipButton
+              habitId={habit.id}
+              date={today}
+              skipped={skippedToday}
+              label={habit.name}
+            />
           </div>
-          <SkipButton
-            habitId={habit.id}
-            date={today}
-            skipped={skippedToday}
-            label={habit.name}
-          />
+          {isMeasureHabit(habit) ? (
+            <ValueStepper
+              habitId={habit.id}
+              date={today}
+              value={todayEntry?.value ?? 0}
+              target={habit.targetValue ?? 0}
+              min={habit.minValue}
+              unit={habit.unit}
+              step={habitStep(habit.targetValue ?? 1, habit.unit)}
+              label={habit.name}
+            />
+          ) : null}
         </div>
       ) : null}
 

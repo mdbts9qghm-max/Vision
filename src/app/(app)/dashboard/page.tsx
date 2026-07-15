@@ -21,6 +21,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { CheckButton } from "@/components/habits/check-button";
 import { SkipButton } from "@/components/habits/skip-button";
+import { ValueStepper } from "@/components/habits/value-stepper";
+import { habitStep, isMeasureHabit } from "@/lib/habit-ui";
 import { FocusCard } from "@/components/dashboard/focus-card";
 import { ShiftContext } from "@/components/dashboard/shift-context";
 import { TodayTrainingCard } from "@/components/dashboard/today-training";
@@ -154,36 +156,59 @@ export default async function DashboardPage() {
               : `Heute fällig (${openCount} offen)`}
           </h2>
           {sortedDue.map(({ habit, completions }) => {
-            const status = statusToday(completions);
+            const entry = completions.find((c) => c.date === today);
+            const status = entry?.status;
             const week = weeklyProgress(
               habit.recurrence,
               completions,
               today,
               shifts,
             );
+            const measure = isMeasureHabit(habit);
             return (
               <Card key={habit.id}>
-                <CardContent className="flex items-center gap-4 py-4">
-                  <CheckButton
-                    habitId={habit.id}
-                    date={today}
-                    done={status === "done"}
-                    label={habit.name}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{habit.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {status === "skipped"
-                        ? "Übersprungen"
-                        : `${recurrenceLabel(habit.recurrence)} · ${week.done}/${week.target} Woche`}
-                    </p>
+                <CardContent className="space-y-3 py-4">
+                  <div className="flex items-center gap-4">
+                    {measure ? (
+                      <span
+                        className="size-2.5 shrink-0 rounded-full bg-primary/70"
+                        aria-hidden
+                      />
+                    ) : (
+                      <CheckButton
+                        habitId={habit.id}
+                        date={today}
+                        done={status === "done"}
+                        label={habit.name}
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{habit.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {status === "skipped"
+                          ? "Übersprungen"
+                          : `${recurrenceLabel(habit.recurrence)} · ${week.done}/${week.target} Woche`}
+                      </p>
+                    </div>
+                    <SkipButton
+                      habitId={habit.id}
+                      date={today}
+                      skipped={status === "skipped"}
+                      label={habit.name}
+                    />
                   </div>
-                  <SkipButton
-                    habitId={habit.id}
-                    date={today}
-                    skipped={status === "skipped"}
-                    label={habit.name}
-                  />
+                  {measure ? (
+                    <ValueStepper
+                      habitId={habit.id}
+                      date={today}
+                      value={entry?.value ?? 0}
+                      target={habit.targetValue ?? 0}
+                      min={habit.minValue}
+                      unit={habit.unit}
+                      step={habitStep(habit.targetValue ?? 1, habit.unit)}
+                      label={habit.name}
+                    />
+                  ) : null}
                 </CardContent>
               </Card>
             );

@@ -25,8 +25,9 @@ function indexByDate(completions: Iterable<Completion>) {
   const done = new Set<string>();
   const skipped = new Set<string>();
   for (const c of completions) {
-    if (c.status === "skipped") skipped.add(c.date);
-    else done.add(c.date);
+    if (c.status === "done") done.add(c.date);
+    else if (c.status === "skipped") skipped.add(c.date);
+    // "partial" zählt weder als erledigt noch als Skip (fällig, nicht erreicht).
   }
   return { done, skipped };
 }

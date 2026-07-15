@@ -36,6 +36,16 @@ describe("weeklyProgress", () => {
     ).toEqual({ done: 3, target: 3 });
   });
 
+  it("partial (Minimum nicht erreicht) zählt als fällig, nicht erledigt", () => {
+    const p = weeklyProgress(
+      daily,
+      [{ date: "2026-07-06", status: "partial", value: 1 }],
+      TODAY,
+    );
+    // Tag ist fällig, aber nicht erledigt → 0/7 (Soll bleibt 7).
+    expect(p).toEqual({ done: 0, target: 7 });
+  });
+
   it("Skip senkt das Wochensoll", () => {
     expect(
       weeklyProgress(

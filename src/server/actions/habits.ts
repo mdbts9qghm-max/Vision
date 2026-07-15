@@ -250,6 +250,60 @@ export async function skipCompletion(input: {
   return {};
 }
 
+const valueSchema = z.object({
+  habitId: z.uuid(),
+  date: z.string().refine(isValidISODate, "Ungültiges Datum."),
+  value: z.number().min(0).max(100000),
+});
+
+/**
+ * Wert einer Mess-/Zähl-Gewohnheit für den Tag loggen (Zwei-Level-Ziel).
+ * Minimum erreicht → erledigt; darunter (>0) → partial; 0 → Eintrag entfernt.
+ */
+export async function logHabitValue(input: {
+  habitId: string;
+  date: string;
+  value: number;
+}): Promise<ActionState> {
+  await requireAuth();
+  const parsed = valueSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { habitId, date, value } = parsed.data;
+  if (!withinBackfill(date)) {
+    return { error: "Nachträge nur bis 6 Tage zurück möglich." };
+  }
+
+  const [habit] = await db
+    .select({ minValue: habits.minValue, targetValue: habits.targetValue })
+    .from(habits)
+    .where(eq(habits.id, habitId));
+  if (!habit) return { error: "Gewohnheit nicht gefunden." };
+
+  const existing = await existingCompletion(habitId, date);
+  if (value <= 0) {
+    if (existing) {
+      await db.delete(habitCompletions).where(eq(habitCompletions.id, existing.id));
+    }
+    revalidateHabitViews();
+    return {};
+  }
+
+  // Schwelle für „erledigt": Minimum, sonst Ziel.
+  const threshold = habit.minValue ?? habit.targetValue ?? 0;
+  const status = threshold > 0 && value < threshold ? "partial" : "done";
+
+  if (existing) {
+    await db
+      .update(habitCompletions)
+      .set({ status, value, skipReason: null })
+      .where(eq(habitCompletions.id, existing.id));
+  } else {
+    await db.insert(habitCompletions).values({ habitId, date, status, value });
+  }
+  revalidateHabitViews();
+  return {};
+}
+
 function revalidateHabitViews() {
   revalidatePath("/habits");
   revalidatePath("/dashboard");

@@ -20,8 +20,12 @@ type BaseRecurrence =
  */
 export type Recurrence = BaseRecurrence & { shiftTypes?: ShiftType[] };
 
-/** Erledigungsstatus eines Tages (verpasst = kein Eintrag, wird berechnet). */
-export type CompletionStatus = "done" | "skipped";
+/**
+ * Erledigungsstatus eines Tages (verpasst = kein Eintrag, wird berechnet).
+ * `partial`: Wert geloggt, aber Minimum noch nicht erreicht — zählt nicht als
+ * erledigt, ist aber auch kein bewusster Skip.
+ */
+export type CompletionStatus = "done" | "skipped" | "partial";
 
 export interface Completion {
   date: string; // YYYY-MM-DD
