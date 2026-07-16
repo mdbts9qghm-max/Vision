@@ -84,6 +84,39 @@ export const dayFocus = sqliteTable("day_focus", {
   createdAt: createdAt(),
 });
 
+/**
+ * Täglicher mentaler Check-in (ein Tap je Facette) + kurzes Journal.
+ * Skalen 1–5. Werte optional, damit auch ein Teil-Check-in gilt.
+ */
+export const checkins = sqliteTable("checkins", {
+  id: id(),
+  date: text("date").notNull().unique(), // YYYY-MM-DD, Europe/Berlin
+  mood: integer("mood"), // 1 = sehr schlecht … 5 = sehr gut
+  energy: integer("energy"), // 1 = leer … 5 = voll
+  stress: integer("stress"), // 1 = entspannt … 5 = überlastet
+  note: text("note"), // freies Journal (optional)
+  createdAt: createdAt(),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
+/**
+ * Wöchentlicher Rückblick (ein Eintrag je ISO-Woche, Montag als Schlüssel):
+ * geführte Reflexion. Die Kennzahlen der Woche werden live berechnet.
+ */
+export const weeklyReviews = sqliteTable("weekly_reviews", {
+  id: id(),
+  weekStart: text("week_start").notNull().unique(), // Montag, YYYY-MM-DD
+  wentWell: text("went_well"),
+  toImprove: text("to_improve"),
+  focusNext: text("focus_next"),
+  createdAt: createdAt(),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 export const goals = sqliteTable("goals", {
   id: id(),
   title: text("title").notNull(),

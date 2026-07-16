@@ -1,6 +1,7 @@
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
+  checkins,
   coachSettings,
   dayFocus,
   goals,
@@ -15,6 +16,7 @@ import {
 } from "@/server/db/schema";
 import { addDaysISO } from "@/domain/dates";
 import type { ShiftType } from "@/domain/coach";
+import type { Checkin } from "@/domain/checkin";
 import type { DaySignals } from "@/domain/readiness";
 import { assembleHabits, type HabitWithCompletions } from "./habits";
 import { assembleGoals, type GoalWithMilestones } from "./goals";
@@ -31,6 +33,7 @@ export interface DashboardData {
   weekPlannedKm: number;
   weekActuals: { km: number; gymCount: number; runCount: number };
   metricsToday: Partial<Record<string, number>>;
+  checkinToday?: Checkin;
 }
 
 const DEFAULT_SETTINGS = (currentWeek: string): CoachSettings => ({
@@ -65,6 +68,7 @@ export async function loadDashboard(
     actualsRows,
     goalRows,
     milestoneRows,
+    checkinRows,
   ] = await db.batch([
     db.select().from(habits).orderBy(asc(habits.createdAt)),
     db
@@ -109,6 +113,16 @@ export async function loadDashboard(
       .where(and(gte(workouts.date, currentWeek), lte(workouts.date, weekEnd))),
     db.select().from(goals).orderBy(asc(goals.createdAt)),
     db.select().from(milestones).orderBy(asc(milestones.sortOrder)),
+    db
+      .select({
+        date: checkins.date,
+        mood: checkins.mood,
+        energy: checkins.energy,
+        stress: checkins.stress,
+        note: checkins.note,
+      })
+      .from(checkins)
+      .where(eq(checkins.date, today)),
   ]);
 
   const metricsToday: Partial<Record<string, number>> = {};
@@ -138,5 +152,6 @@ export async function loadDashboard(
       runCount: actualsRows[0]?.runCount ?? 0,
     },
     metricsToday,
+    checkinToday: checkinRows[0],
   };
 }

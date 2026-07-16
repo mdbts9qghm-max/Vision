@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Activity, LogOut, PlusCircle, Sun, TrendingUp } from "lucide-react";
+import {
+  Activity,
+  LogOut,
+  PlusCircle,
+  Smile,
+  Sun,
+  TrendingUp,
+} from "lucide-react";
 import { logout } from "@/server/actions/auth";
 import { loadDashboard } from "@/server/queries/dashboard";
 import { adjustSession } from "@/domain/readiness";
@@ -26,6 +33,7 @@ import { RecoveryCard } from "@/components/dashboard/recovery-card";
 import { WeekCard } from "@/components/dashboard/week-card";
 import { ActiveGoalCard } from "@/components/dashboard/active-goal";
 import { QuickLog } from "@/components/dashboard/quick-log";
+import { CheckinCard } from "@/components/dashboard/checkin-card";
 
 export const metadata: Metadata = { title: "Heute — Vision" };
 
@@ -43,6 +51,7 @@ export default async function DashboardPage() {
     weekPlannedKm,
     weekActuals,
     metricsToday,
+    checkinToday,
   } = await loadDashboard(today, currentWeek);
 
   // 2.1 Schicht-Kontext
@@ -144,6 +153,14 @@ export default async function DashboardPage() {
           sleepHours={metricsToday.sleep}
           readiness={signals.readiness}
         />
+      </section>
+
+      {/* Befinden — mentaler Check-in */}
+      <section className="space-y-2">
+        <SectionLabel icon={<Smile className="size-3.5" aria-hidden />}>
+          Befinden
+        </SectionLabel>
+        <CheckinCard initial={checkinToday} />
       </section>
 
       {/* Heute — was steht an? */}
