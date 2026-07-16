@@ -1,9 +1,10 @@
-import { Moon } from "lucide-react";
+import { Activity, HeartPulse, Moon } from "lucide-react";
 import type { ReadinessScore } from "@/domain/readiness";
 import { RECOVERY_RED_BELOW } from "@/domain/readiness";
 import { Card, CardContent } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
 import { ReadinessCheck } from "./readiness-check";
+import { WhoopInputs } from "./whoop-inputs";
 
 function recoveryColor(pct: number): string {
   if (pct < RECOVERY_RED_BELOW) return "text-destructive";
@@ -13,15 +14,20 @@ function recoveryColor(pct: number): string {
 
 /**
  * WHOOP-inspirierte Erholungs-Karte: Recovery-Ring (falls geloggt) + Schlaf,
- * dazu der subjektive Ein-Tap-Check. Beide speisen die Autoregulation.
+ * HRV & Ruhepuls, der subjektive Ein-Tap-Check und die WHOOP-Erfassung direkt
+ * an Ort und Stelle. Alles speist die Autoregulation.
  */
 export function RecoveryCard({
   recoveryPct,
   sleepHours,
+  hrvToday,
+  rhrToday,
   readiness,
 }: {
   recoveryPct?: number;
   sleepHours?: number;
+  hrvToday?: number;
+  rhrToday?: number;
   readiness: ReadinessScore | null;
 }) {
   return (
@@ -56,11 +62,22 @@ export function RecoveryCard({
                 {sleepHours !== undefined ? `${sleepHours} h` : "–"}
               </span>
             </p>
-            {recoveryPct === undefined ? (
-              <p className="text-xs text-muted-foreground">
-                WHOOP-Werte im Quick-Log unten eintragen.
-              </p>
-            ) : null}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Activity className="size-3.5" aria-hidden />
+                HRV:{" "}
+                <span className="text-foreground">
+                  {hrvToday !== undefined ? `${hrvToday} ms` : "–"}
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <HeartPulse className="size-3.5" aria-hidden />
+                Puls:{" "}
+                <span className="text-foreground">
+                  {rhrToday !== undefined ? `${rhrToday} bpm` : "–"}
+                </span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -68,6 +85,13 @@ export function RecoveryCard({
           <p className="text-sm text-muted-foreground">Wie fühlst du dich?</p>
           <ReadinessCheck value={readiness} />
         </div>
+
+        <WhoopInputs
+          sleepToday={sleepHours}
+          recoveryToday={recoveryPct}
+          hrvToday={hrvToday}
+          rhrToday={rhrToday}
+        />
       </CardContent>
     </Card>
   );

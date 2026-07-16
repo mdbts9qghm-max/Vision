@@ -151,6 +151,8 @@ export default async function DashboardPage() {
         <RecoveryCard
           recoveryPct={metricsToday.recovery}
           sleepHours={metricsToday.sleep}
+          hrvToday={metricsToday.hrv}
+          rhrToday={metricsToday.rhr}
           readiness={signals.readiness}
         />
       </section>
@@ -234,10 +236,6 @@ export default async function DashboardPage() {
         </SectionLabel>
         <QuickLog
           weightToday={metricsToday.weight}
-          sleepToday={metricsToday.sleep}
-          recoveryToday={metricsToday.recovery}
-          hrvToday={metricsToday.hrv}
-          rhrToday={metricsToday.rhr}
           stepsToday={metricsToday.steps}
         />
       </section>
