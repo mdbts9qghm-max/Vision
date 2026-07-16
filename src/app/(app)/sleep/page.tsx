@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Moon } from "lucide-react";
 import { loadSleepPage } from "@/server/queries/sleep";
-import { sleepPlan } from "@/domain/sleep";
+import { sleepPlan, tomorrowPrep } from "@/domain/sleep";
 import { formatLongDate, todayISO } from "@/domain/dates";
 import { RECOVERY_RED_BELOW } from "@/domain/readiness";
 import { SHIFT_TIME_LABEL, SHIFT_TYPE_LABEL } from "@/lib/labels";
@@ -19,6 +19,24 @@ function recoveryTone(pct: number): { label: string; className: string } {
   return { label: "bereit", className: "text-emerald-500" };
 }
 
+function TipList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </p>
+      <ul className="space-y-2 text-sm">
+        {items.map((t, i) => (
+          <li key={i} className="flex items-baseline gap-2">
+            <span className="mt-1 size-1.5 shrink-0 rounded-full bg-primary" />
+            <span className="text-muted-foreground">{t}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default async function SleepPage() {
   const today = todayISO();
   const { shiftYesterday, shiftToday, shiftTomorrow, sleepHours, recoveryPct } =
@@ -30,6 +48,9 @@ export default async function SleepPage() {
   const tomorrowPlan = shiftTomorrow
     ? sleepPlan(shiftTomorrow, { firstNight: tomorrowFirstNight })
     : undefined;
+  const prepTomorrow = tomorrowPrep(shiftTomorrow, {
+    firstNight: tomorrowFirstNight,
+  });
 
   const rec = recoveryPct !== undefined ? recoveryTone(recoveryPct) : undefined;
 
@@ -113,17 +134,19 @@ export default async function SleepPage() {
       {plan ? (
         <Card>
           <CardHeader>
-            <CardTitle>Erholung heute</CardTitle>
+            <CardTitle>Erholung</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              {plan.tips.map((t, i) => (
-                <li key={i} className="flex items-baseline gap-2">
-                  <span className="mt-1 size-1.5 shrink-0 rounded-full bg-primary" />
-                  <span className="text-muted-foreground">{t}</span>
-                </li>
-              ))}
-            </ul>
+          <CardContent className="space-y-5">
+            <TipList title="Heute beachten" items={plan.tips} />
+            <TipList title="Abendroutine" items={plan.eveningRoutine} />
+            <TipList
+              title={
+                shiftTomorrow
+                  ? `Für morgen · ${SHIFT_TYPE_LABEL[shiftTomorrow]}`
+                  : "Für morgen"
+              }
+              items={prepTomorrow}
+            />
           </CardContent>
         </Card>
       ) : null}

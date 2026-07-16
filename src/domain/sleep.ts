@@ -33,6 +33,8 @@ export interface SleepPlan {
   /** Ziel-Schlafdauer des Haupt-Schlafblocks in Stunden. */
   sleepTargetHours: number;
   tips: string[];
+  /** Runter-fahren heute Abend (schicht-abhängig). */
+  eveningRoutine: string[];
 }
 
 /** Uhrzeit → Minuten seit 00:00. */
@@ -93,6 +95,12 @@ export function sleepPlan(
           "Letztes Koffein 6–8 h vor dem Zubettgehen (≈15 Uhr).",
           "Schlafraum dunkel, kühl, leise; feste Zubett-Zeit stabilisiert die innere Uhr.",
         ],
+        eveningRoutine: [
+          "Letzte größere Mahlzeit ~2 h vor dem Schlaf, danach nur leicht.",
+          "1 h vor dem Bett: Licht dimmen, Bildschirme runter.",
+          "Schlafraum auf ~18 °C, dunkel und leise vorbereiten.",
+          "Zubettgehen ~22:30 anpeilen — feste Zeit hält die innere Uhr stabil.",
+        ],
       };
 
     case "night":
@@ -122,6 +130,12 @@ export function sleepPlan(
             "Hauptmahlzeit vor die Schicht legen; nachts nur leichte, proteinbetonte Snacks.",
             "In der Schicht hell, auf dem Heimweg morgens Sonnenbrille.",
           ],
+          eveningRoutine: [
+            "Vor der Schicht: Hauptmahlzeit gegessen, leichte Snacks für die Nacht einpacken.",
+            "Koffein zum Schichtstart — letzte Dosis bis ~00:30.",
+            "In der Schicht hell halten (fördert Wachheit).",
+            "Sonnenbrille + Blackout fürs Schlafzimmer für den Tagschlaf danach bereitlegen.",
+          ],
         };
       }
       return {
@@ -143,6 +157,12 @@ export function sleepPlan(
           "Folgenächte sind Erhalt, kein Aufbau: kein Training, der Vormittag gehört dem Schlaf.",
           "Tagschlaf 08–14 Uhr aktiv als zu wenig behandeln — mit Kurz-Nap oder früherem Zubettgehen verlängern.",
           "Kein Koffein mehr ab ~00:30, sonst leidet der ohnehin knappe Tagschlaf.",
+        ],
+        eveningRoutine: [
+          "Vor der nächsten Nacht: Hauptmahlzeit essen, Snacks einpacken.",
+          "Kurz-Nap gegen 16 Uhr, falls der Tagschlaf zu knapp war.",
+          "Koffein zum Schichtstart, letzte Dosis bis ~00:30.",
+          "Schlafzimmer für den morgigen Tagschlaf abdunkeln.",
         ],
       };
 
@@ -170,6 +190,11 @@ export function sleepPlan(
           "Nachmittags fällt die freie Zeit ins Leistungshoch, aber du bist im Defizit: nur locker/moderat, keine Qualität.",
           "Schlaf hat heute Vorrang vor jeder zusätzlichen Einheit.",
         ],
+        eveningRoutine: [
+          "Heute früh ins Bett (~22 Uhr), um die Nachtschicht-Erholung nachzuholen.",
+          "Nachmittags kein Koffein mehr; abends Licht dimmen.",
+          "Schlafraum dunkel & kühl — jetzt zählt jede Stunde Schlaf.",
+        ],
       };
 
     case "free":
@@ -194,6 +219,11 @@ export function sleepPlan(
           "Bester Trainingstag — die wichtigste Einheit der Woche hierhin legen.",
           "Voller Nachtschlaf (~8 h) ist die Basis: nur möglich, wenn keine Nacht vorausging.",
           "Long Run ist auch Ernährungs- und Ausrüstungs-Generalprobe.",
+        ],
+        eveningRoutine: [
+          "Auf ~8 h Schlaf hinarbeiten — die Basis für morgen.",
+          "Kohlenhydrate am Abend auffüllen (falls morgen ein Long Run ansteht).",
+          "1 h vor dem Bett Bildschirme runter, Licht dimmen; Schlafraum kühl & dunkel.",
         ],
       };
 
@@ -220,6 +250,57 @@ export function sleepPlan(
           "Wie Tagschicht mit noch engerem Fenster: laufen nur kurz während/nach der Schicht.",
           "Enges Zeitfenster — Schlaf hat Vorrang vor der Einheit.",
         ],
+        eveningRoutine: [
+          "Nach der späten Schicht bewusst runterfahren — kein intensives Training mehr.",
+          "Leichter Snack, kein Koffein; Licht dimmen.",
+          "Schlafraum dunkel & kühl, Zubettgehen ~23 Uhr.",
+        ],
       };
+  }
+}
+
+/**
+ * Vorbereitung heute für die morgige Schicht. Pure Funktion.
+ */
+export function tomorrowPrep(
+  shift: ShiftType | undefined,
+  opts: SleepPlanOptions = {},
+): string[] {
+  switch (shift) {
+    case undefined:
+      return [
+        "Für morgen ist keine Schicht hinterlegt — im Coach eintragen, dann gebe ich dir die Vorbereitung.",
+      ];
+    case "day":
+      return [
+        "Morgen Tagschicht (07–19 Uhr): heute früh genug ins Bett, Wecker stellen.",
+        "Kleidung und Tasche schon abends vorbereiten.",
+      ];
+    case "v":
+      return [
+        "Morgen V-Schicht (~08–20 Uhr): heute ausreichend schlafen; Training morgen nur kurz möglich.",
+      ];
+    case "free":
+      return [
+        "Morgen Freischicht — dein bester Trainingstag: heute voll ausschlafen.",
+        "Ausrüstung und Verpflegung für die Schlüsseleinheit schon heute richten.",
+      ];
+    case "sleep":
+      return [
+        "Morgen Schlaftag: Tagschlaf 08–14 Uhr fest einplanen, Blackout vorbereiten.",
+        "Danach nur locker; Schlaf über den Tag verlängern (zweiter Nap / früh ins Bett).",
+      ];
+    case "night":
+      if (opts.firstNight) {
+        return [
+          "Morgen erste Nachtschicht: Vormittag für einen lockeren Lauf freihalten (~10–12 Uhr).",
+          "Nachmittags-Nap (14–17 Uhr) fest einplanen; Hauptmahlzeit vor die Schicht legen.",
+          "Schlafzimmer für den Tagschlaf danach abdunkeln, Sonnenbrille bereitlegen.",
+        ];
+      }
+      return [
+        "Morgen Folge-Nachtschicht: Vormittag ist Nachholschlaf, kein Training.",
+        "Snacks und Koffein-Plan für die Nacht vorbereiten.",
+      ];
   }
 }

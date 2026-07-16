@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hm, sleepPlan } from "./sleep";
+import { hm, sleepPlan, tomorrowPrep } from "./sleep";
 import type { ShiftType } from "./coach";
 
 const ALL: ShiftType[] = ["day", "night", "sleep", "free", "v"];
@@ -19,8 +19,21 @@ describe("sleepPlan — Invarianten", () => {
           expect(m.atMin).toBeLessThanOrEqual(1440);
         }
         expect(plan.tips.length).toBeGreaterThan(0);
+        expect(plan.eveningRoutine.length).toBeGreaterThan(0);
       }
     }
+  });
+
+  it("tomorrowPrep liefert für jede Schicht Anweisungen, differenziert bei Nacht", () => {
+    for (const shift of ALL) {
+      expect(tomorrowPrep(shift).length).toBeGreaterThan(0);
+    }
+    // erste vs. Folgenacht unterscheiden sich
+    expect(tomorrowPrep("night", { firstNight: true })).not.toEqual(
+      tomorrowPrep("night", { firstNight: false }),
+    );
+    // ohne Schicht: Hinweis zum Eintragen
+    expect(tomorrowPrep(undefined)[0]).toContain("keine Schicht");
   });
 
   it("über Mitternacht laufender Nachtschlaf wird gesplittet (Freischicht)", () => {
