@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
 import { CoachCalendar, type CalDay } from "@/components/coach/coach-calendar";
-import { WeightChart } from "@/components/fitness/weight-chart";
+import { WeightChart } from "@/components/fitness/weight-chart-lazy";
 import { WorkoutForm } from "@/components/fitness/workout-form";
 import { WorkoutList } from "@/components/fitness/workout-list";
 

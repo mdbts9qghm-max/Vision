@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckButton } from "@/components/habits/check-button";
 import { SkipButton } from "@/components/habits/skip-button";
 import { ValueStepper } from "@/components/habits/value-stepper";
-import { HabitWeeksChart } from "@/components/habits/habit-weeks-chart";
+import { HabitWeeksChart } from "@/components/habits/habit-weeks-chart-lazy";
 
 export const metadata: Metadata = { title: "Gewohnheit — Vision" };
 
