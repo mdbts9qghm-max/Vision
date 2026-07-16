@@ -113,13 +113,13 @@ export default async function CoachPage() {
             <p className="text-sm font-medium">Diese Woche</p>
             <p className="text-sm text-muted-foreground">
               {isStartblock
-                ? `${weekActuals.runCount}/${runTarget} Läufe`
+                ? `${weekActuals.runCount}/${runTarget} Läufe · ${Math.round(weekActuals.km * 10) / 10} km`
                 : `${Math.round(weekActuals.km * 10) / 10}/${weekPlannedKm} km`}{" "}
               · Kraft {weekActuals.gymCount}×
             </p>
             <p className="text-xs text-muted-foreground">
               {isStartblock
-                ? "Run-Walk zählt voll — Zone 3+ ist tabu, Talk-Test."
+                ? "Ziel sind die Läufe (Konsistenz) — km laufen nur mit. Zone 3+ ist tabu, Talk-Test."
                 : "Kilometer kommen aus dem Logbuch (Distanz beim Loggen)."}
             </p>
           </div>
