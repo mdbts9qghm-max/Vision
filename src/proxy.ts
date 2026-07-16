@@ -27,6 +27,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Alles außer Next-Interna und statischen Assets (Dateien mit Endung).
-  matcher: ["/((?!_next|.*\\..*).*)"],
+  // Alles außer Next-Interna, API-Routen (eigene Auth) und statischen
+  // Assets (Dateien mit Endung). /api/health bleibt so öffentlich (Keep-warm).
+  matcher: ["/((?!_next|api|.*\\..*).*)"],
 };
