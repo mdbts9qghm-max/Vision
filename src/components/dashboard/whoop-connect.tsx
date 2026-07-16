@@ -67,12 +67,10 @@ export function WhoopConnect({
     });
   }
 
+  // Solange WHOOP nicht eingerichtet/verbunden ist, gar nichts anzeigen —
+  // der Erholungs-Block bleibt sauber, die manuelle Eingabe steht direkt darunter.
   if (!configured && !connected) {
-    return (
-      <p className="border-t border-border pt-3 text-xs text-muted-foreground">
-        WHOOP-Auto-Import ist noch nicht eingerichtet.
-      </p>
-    );
+    return null;
   }
 
   return (
