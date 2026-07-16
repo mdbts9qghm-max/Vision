@@ -3,12 +3,18 @@ import Link from "next/link";
 import { Moon } from "lucide-react";
 import { loadSleepPage } from "@/server/queries/sleep";
 import { sleepPlan, tomorrowPrep } from "@/domain/sleep";
+import { nutritionPlan } from "@/domain/nutrition";
 import { formatLongDate, todayISO } from "@/domain/dates";
 import { RECOVERY_RED_BELOW } from "@/domain/readiness";
-import { SHIFT_TIME_LABEL, SHIFT_TYPE_LABEL } from "@/lib/labels";
+import {
+  SESSION_KIND_LABEL,
+  SHIFT_TIME_LABEL,
+  SHIFT_TYPE_LABEL,
+} from "@/lib/labels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
 import { DayTimeline } from "@/components/sleep/day-timeline";
+import { NutritionCard } from "@/components/sleep/nutrition-card";
 
 export const metadata: Metadata = { title: "Schlaf — Vision" };
 
@@ -39,11 +45,28 @@ function TipList({ title, items }: { title: string; items: string[] }) {
 
 export default async function SleepPage() {
   const today = todayISO();
-  const { shiftYesterday, shiftToday, shiftTomorrow, sleepHours, recoveryPct } =
-    await loadSleepPage(today);
+  const {
+    shiftYesterday,
+    shiftToday,
+    shiftTomorrow,
+    sleepHours,
+    recoveryPct,
+    session,
+    weightKg,
+  } = await loadSleepPage(today);
 
   const firstNight = shiftToday === "night" && shiftYesterday !== "night";
   const plan = shiftToday ? sleepPlan(shiftToday, { firstNight }) : undefined;
+  const fuel = shiftToday
+    ? nutritionPlan({
+        shift: shiftToday,
+        kind: session?.kind,
+        targetKm: session?.targetKm,
+        targetMin: session?.targetMin,
+        weightKg,
+        firstNight,
+      })
+    : undefined;
   const tomorrowFirstNight = shiftTomorrow === "night" && shiftToday !== "night";
   const tomorrowPlan = shiftTomorrow
     ? sleepPlan(shiftTomorrow, { firstNight: tomorrowFirstNight })
@@ -149,6 +172,13 @@ export default async function SleepPage() {
             />
           </CardContent>
         </Card>
+      ) : null}
+
+      {fuel ? (
+        <NutritionCard
+          plan={fuel}
+          sessionLabel={session ? SESSION_KIND_LABEL[session.kind] : undefined}
+        />
       ) : null}
 
       {tomorrowPlan && shiftTomorrow ? (
