@@ -22,6 +22,7 @@ import { phaseForWeek } from "@/domain/coach";
 import { isDueOn, shiftOn } from "@/domain/recurrence";
 import { overallWeeklyProgress, weeklyProgress } from "@/domain/scoring";
 import { greetingFor } from "@/lib/greeting";
+import { whoopConfigured } from "@/server/whoop/config";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { FocusCard } from "@/components/dashboard/focus-card";
@@ -37,9 +38,14 @@ import { CheckinCard } from "@/components/dashboard/checkin-card";
 
 export const metadata: Metadata = { title: "Heute — Vision" };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ whoop?: string }>;
+}) {
   const today = todayISO();
   const currentWeek = weekStartISO(today);
+  const { whoop: whoopFlash } = await searchParams;
   const {
     habits: all,
     goals,
@@ -52,6 +58,7 @@ export default async function DashboardPage() {
     weekActuals,
     metricsToday,
     checkinToday,
+    whoop,
   } = await loadDashboard(today, currentWeek);
 
   // 2.1 Schicht-Kontext
@@ -154,6 +161,12 @@ export default async function DashboardPage() {
           hrvToday={metricsToday.hrv}
           rhrToday={metricsToday.rhr}
           readiness={signals.readiness}
+          whoop={{
+            configured: whoopConfigured(),
+            connected: whoop.connected,
+            lastSyncAt: whoop.lastSyncAt,
+            flash: whoopFlash,
+          }}
         />
       </section>
 

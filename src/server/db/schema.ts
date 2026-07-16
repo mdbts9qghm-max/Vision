@@ -204,6 +204,23 @@ export const readinessChecks = sqliteTable("readiness_checks", {
   createdAt: createdAt(),
 });
 
+/**
+ * WHOOP-OAuth-Verbindung (genau eine Zeile, id = "singleton").
+ * Client-ID/Secret liegen in den Env-Variablen, hier nur die per-User-Tokens.
+ */
+export const whoopConnection = sqliteTable("whoop_connection", {
+  id: text("id").primaryKey().default("singleton"),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  expiresAt: text("expires_at").notNull(), // ISO, Ablauf des Access-Tokens
+  scope: text("scope"),
+  lastSyncAt: text("last_sync_at"), // ISO des letzten erfolgreichen Syncs
+  createdAt: createdAt(),
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 /** Genau eine Zeile (id = "singleton") — Parameter des Coaches. */
 export const coachSettings = sqliteTable("coach_settings", {
   id: text("id").primaryKey().default("singleton"),

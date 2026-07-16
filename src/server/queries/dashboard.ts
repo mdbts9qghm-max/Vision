@@ -12,6 +12,7 @@ import {
   plannedSessions,
   readinessChecks,
   shifts,
+  whoopConnection,
   workouts,
 } from "@/server/db/schema";
 import { addDaysISO } from "@/domain/dates";
@@ -34,6 +35,7 @@ export interface DashboardData {
   weekActuals: { km: number; gymCount: number; runCount: number };
   metricsToday: Partial<Record<string, number>>;
   checkinToday?: Checkin;
+  whoop: { connected: boolean; lastSyncAt?: string };
 }
 
 const DEFAULT_SETTINGS = (currentWeek: string): CoachSettings => ({
@@ -69,6 +71,7 @@ export async function loadDashboard(
     goalRows,
     milestoneRows,
     checkinRows,
+    whoopRows,
   ] = await db.batch([
     db.select().from(habits).orderBy(asc(habits.createdAt)),
     db
@@ -123,6 +126,10 @@ export async function loadDashboard(
       })
       .from(checkins)
       .where(eq(checkins.date, today)),
+    db
+      .select({ lastSyncAt: whoopConnection.lastSyncAt })
+      .from(whoopConnection)
+      .where(eq(whoopConnection.id, "singleton")),
   ]);
 
   const metricsToday: Partial<Record<string, number>> = {};
@@ -153,5 +160,9 @@ export async function loadDashboard(
     },
     metricsToday,
     checkinToday: checkinRows[0],
+    whoop: {
+      connected: whoopRows.length > 0,
+      lastSyncAt: whoopRows[0]?.lastSyncAt ?? undefined,
+    },
   };
 }
