@@ -1,0 +1,1 @@
+ALTER TABLE `whoop_connection` ADD `token_meta` text;

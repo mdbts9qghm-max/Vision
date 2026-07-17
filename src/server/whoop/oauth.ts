@@ -16,6 +16,8 @@ export interface WhoopTokens {
   refreshToken: string;
   expiresIn: number; // Sekunden
   scope?: string;
+  /** Redigierte Diagnose-Meta der Roh-Antwort (kein echtes Token). */
+  rawMeta?: string;
 }
 
 /** Authorize-URL für den Consent-Screen. */
@@ -48,12 +50,22 @@ async function postToken(body: URLSearchParams): Promise<WhoopTokens> {
     const text = await res.text().catch(() => "");
     throw new Error(`WHOOP-Token-Fehler ${res.status}: ${text.slice(0, 200)}`);
   }
-  const json = (await res.json()) as TokenResponse;
+  const json = (await res.json()) as TokenResponse & Record<string, unknown>;
+  const rawMeta = JSON.stringify({
+    keys: Object.keys(json),
+    token_type: json.token_type,
+    expires_in: json.expires_in,
+    at_len: json.access_token?.length ?? 0,
+    at_jwt: json.access_token?.startsWith("ey") ?? false,
+    at_pre: json.access_token?.slice(0, 8) ?? null,
+    rt_len: json.refresh_token?.length ?? 0,
+  });
   return {
     accessToken: json.access_token,
     refreshToken: json.refresh_token,
     expiresIn: json.expires_in,
     scope: json.scope,
+    rawMeta,
   };
 }
 

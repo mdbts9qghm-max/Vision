@@ -215,6 +215,7 @@ export const whoopConnection = sqliteTable("whoop_connection", {
   expiresAt: text("expires_at").notNull(), // ISO, Ablauf des Access-Tokens
   scope: text("scope"),
   lastSyncAt: text("last_sync_at"), // ISO des letzten erfolgreichen Syncs
+  tokenMeta: text("token_meta"), // Diagnose: redigierte Meta der Token-Antwort
   createdAt: createdAt(),
   updatedAt: text("updated_at")
     .notNull()

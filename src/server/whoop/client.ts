@@ -39,6 +39,7 @@ export async function saveTokens(tokens: WhoopTokens): Promise<void> {
     refreshToken: tokens.refreshToken,
     expiresAt: expiryFromNow(tokens.expiresIn),
     scope: tokens.scope ?? null,
+    tokenMeta: tokens.rawMeta ?? null,
     updatedAt: new Date().toISOString(),
   };
   await db

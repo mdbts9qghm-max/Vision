@@ -44,6 +44,7 @@ export async function GET() {
     refreshTokenLen: conn.refreshToken?.length ?? 0,
     refreshTokenPrefix: conn.refreshToken ? conn.refreshToken.slice(0, 8) : null,
     accessEqualsRefresh: token === conn.refreshToken,
+    tokenMeta: conn.tokenMeta,
     lastSyncAt: conn.lastSyncAt,
   };
 
