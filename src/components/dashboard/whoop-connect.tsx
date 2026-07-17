@@ -27,25 +27,27 @@ export function WhoopConnect({
   connected,
   lastSyncAt,
   flash,
-  detail,
 }: {
   configured: boolean;
   connected: boolean;
   lastSyncAt?: string;
   flash?: string;
+  /** Technischer Grund (nur intern/Debug) — wird bewusst nicht angezeigt. */
   detail?: string;
 }) {
   const [pending, startTransition] = useTransition();
-  const withDetail = (text: string) => (detail ? `${text} (${detail})` : text);
-  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(
+  // Ein Sync/Connect-Fehler bekommt eine ruhige, hilfreiche Zeile statt einer
+  // roten Roh-Fehlermeldung. `detail` wird bewusst nicht mehr angezeigt.
+  const SYNC_FAILED = "Sync gerade nicht möglich — Werte unten manuell eintragen.";
+  const [msg, setMsg] = useState<{ text: string; tone: "ok" | "warn" } | null>(
     flash === "connected"
-      ? { text: "WHOOP verbunden.", ok: true }
+      ? { text: "WHOOP verbunden.", tone: "ok" }
       : flash === "denied"
-        ? { text: withDetail("Verbindung abgebrochen."), ok: false }
+        ? { text: "Verbindung abgebrochen.", tone: "warn" }
         : flash === "error"
-          ? { text: withDetail("Verbindung fehlgeschlagen."), ok: false }
+          ? { text: "Verbindung nicht möglich — du kannst manuell eintragen.", tone: "warn" }
           : flash === "unconfigured"
-            ? { text: "WHOOP-Zugang nicht konfiguriert.", ok: false }
+            ? { text: "WHOOP-Zugang nicht konfiguriert.", tone: "warn" }
             : null,
   );
 
@@ -53,13 +55,13 @@ export function WhoopConnect({
     setMsg(null);
     startTransition(async () => {
       const r = await syncWhoopNow();
-      if (r.error) setMsg({ text: r.error, ok: false });
+      if (r.error) setMsg({ text: SYNC_FAILED, tone: "warn" });
       else if (r.saved && r.saved.length > 0)
         setMsg({
           text: `Aktualisiert: ${r.saved.map((s) => SAVED_LABEL[s] ?? s).join(", ")}`,
-          ok: true,
+          tone: "ok",
         });
-      else setMsg({ text: "Keine neuen WHOOP-Daten.", ok: true });
+      else setMsg({ text: "Keine neuen WHOOP-Daten.", tone: "ok" });
     });
   }
 
@@ -124,7 +126,7 @@ export function WhoopConnect({
         <p
           className={cn(
             "text-xs",
-            msg.ok ? "text-emerald-500" : "text-destructive",
+            msg.tone === "ok" ? "text-emerald-500" : "text-amber-500",
           )}
           aria-live="polite"
         >
