@@ -12,6 +12,17 @@ import { refreshTokens, type WhoopTokens } from "./oauth";
 
 export type WhoopConnection = typeof whoopConnection.$inferSelect;
 
+/** HTTP-Fehler der WHOOP-API mit Statuscode (für gezieltes 401-Handling). */
+export class WhoopHttpError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "WhoopHttpError";
+  }
+}
+
 export async function getConnection(): Promise<WhoopConnection | undefined> {
   const rows = await db
     .select()
@@ -62,6 +73,15 @@ export async function getAccessToken(): Promise<string> {
   return tokens.accessToken;
 }
 
+/** Token unbedingt erneuern (z. B. nachdem die API ein Token mit 401 abwies). */
+export async function refreshAccessToken(): Promise<string> {
+  const conn = await getConnection();
+  if (!conn) throw new Error("WHOOP ist nicht verbunden.");
+  const tokens = await refreshTokens(conn.refreshToken);
+  await saveTokens(tokens);
+  return tokens.accessToken;
+}
+
 /** Authentifizierter GET gegen die WHOOP-API mit einem bereits gültigen Token. */
 export async function whoopGet<T>(path: string, token: string): Promise<T> {
   const res = await fetch(`${WHOOP_API_BASE}${path}`, {
@@ -70,7 +90,7 @@ export async function whoopGet<T>(path: string, token: string): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`WHOOP-API ${res.status}: ${text.slice(0, 200)}`);
+    throw new WhoopHttpError(res.status, `WHOOP-API ${res.status}: ${text.slice(0, 200)}`);
   }
   return (await res.json()) as T;
 }
