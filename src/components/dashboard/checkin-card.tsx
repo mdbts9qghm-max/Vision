@@ -83,9 +83,9 @@ export function CheckinCard({
                   aria-label={`${f.label}: ${f.levels[i]}`}
                   onClick={() => pick(f.key, level)}
                   className={cn(
-                    "flex size-9 items-center justify-center rounded-full text-lg transition-all",
+                    "flex size-9 items-center justify-center rounded-full text-lg transition-all duration-150 active:scale-90",
                     selected
-                      ? "bg-primary/20 ring-2 ring-primary"
+                      ? "scale-110 bg-primary/20 ring-2 ring-primary"
                       : "opacity-45 grayscale hover:opacity-80",
                   )}
                 >

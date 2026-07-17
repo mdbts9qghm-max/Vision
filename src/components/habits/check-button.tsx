@@ -31,14 +31,21 @@ export function CheckButton({
         })
       }
       className={cn(
-        "flex size-11 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+        "flex size-11 shrink-0 items-center justify-center rounded-full border-2 transition duration-200 active:scale-90",
         done
           ? "border-primary bg-primary text-primary-foreground"
           : "border-muted-foreground/40 text-transparent hover:border-primary",
         pending && "opacity-50",
       )}
     >
-      <Check className="size-5" strokeWidth={3} aria-hidden />
+      <Check
+        className={cn(
+          "size-5 transition-transform duration-200",
+          done ? "scale-100" : "scale-0",
+        )}
+        strokeWidth={3}
+        aria-hidden
+      />
     </button>
   );
 }

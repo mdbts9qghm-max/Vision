@@ -1,8 +1,12 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
  * Kreisförmiger Fortschrittsring (SVG). Farbe kommt über `colorClass`
- * (currentColor). Für echte Kennzahlen — keine Gamification.
+ * (currentColor). Für echte Kennzahlen — keine Gamification. Füllt sich beim
+ * Erscheinen sanft von 0 auf den Zielwert.
  */
 export function Ring({
   value,
@@ -27,6 +31,13 @@ export function Ring({
   const c = 2 * Math.PI * r;
   const ratio = max > 0 ? Math.min(Math.max(value / max, 0), 1) : 0;
   const offset = c * (1 - ratio);
+
+  // Beim Mount von "leer" (c) auf den Zielwert animieren.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   return (
     <div
@@ -53,8 +64,11 @@ export function Ring({
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
-          strokeDashoffset={offset}
-          className={cn("transition-[stroke-dashoffset] duration-700", colorClass)}
+          strokeDashoffset={mounted ? offset : c}
+          className={cn(
+            "transition-[stroke-dashoffset] duration-1000 ease-out",
+            colorClass,
+          )}
           stroke="currentColor"
         />
       </svg>

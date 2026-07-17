@@ -34,7 +34,7 @@ export function ReadinessCheck({ value }: { value: ReadinessScore | null }) {
             })
           }
           className={cn(
-            "rounded-full border px-3 py-1 text-xs transition-colors",
+            "rounded-full border px-3 py-1 text-xs transition duration-150 active:scale-90",
             value === o.value
               ? "border-primary bg-primary/15 text-foreground"
               : "border-input text-muted-foreground hover:text-foreground",
