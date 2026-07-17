@@ -7,7 +7,7 @@ import { db } from "@/server/db";
 import { metrics } from "@/server/db/schema";
 import { mapSyncData, type WhoopRecovery, type WhoopSleep } from "@/domain/whoop";
 import { METRIC_UNITS } from "@/domain/metric-units";
-import { markSynced, whoopGet } from "./client";
+import { getAccessToken, markSynced, whoopGet } from "./client";
 
 interface Collection<T> {
   records: T[];
@@ -20,10 +20,12 @@ export interface SyncSummary {
 }
 
 export async function syncWhoop(): Promise<SyncSummary> {
-  // Jeweils den neuesten Datensatz holen (Sortierung: start desc).
+  // Token EINMAL erneuern, dann beide Abrufe mit demselben Token — sonst
+  // rennen zwei parallele Refreshes auf dasselbe (einmalige) Refresh-Token.
+  const token = await getAccessToken();
   const [recovery, sleep] = await Promise.all([
-    whoopGet<Collection<WhoopRecovery>>("/v2/recovery?limit=1"),
-    whoopGet<Collection<WhoopSleep>>("/v2/activity/sleep?limit=1"),
+    whoopGet<Collection<WhoopRecovery>>("/v2/recovery?limit=1", token),
+    whoopGet<Collection<WhoopSleep>>("/v2/activity/sleep?limit=1", token),
   ]);
 
   const mapped = mapSyncData(recovery.records?.[0], sleep.records?.[0]);

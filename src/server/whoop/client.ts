@@ -47,38 +47,27 @@ export async function markSynced(now = new Date()): Promise<void> {
     .where(eq(whoopConnection.id, "singleton"));
 }
 
-/** Gültiges Access-Token holen — erneuert automatisch, wenn es (fast) abläuft. */
-async function validAccessToken(conn: WhoopConnection): Promise<string> {
+/**
+ * Gültiges Access-Token holen — erneuert EINMAL, wenn es (fast) abläuft, und
+ * speichert das rotierte Refresh-Token. WICHTIG: genau einmal aufrufen und das
+ * Ergebnis an alle Requests weitergeben. WHOOP-Refresh-Tokens sind einmalig —
+ * zwei parallele Refreshes desselben Tokens führen sonst zu 400 (malformed).
+ */
+export async function getAccessToken(): Promise<string> {
+  const conn = await getConnection();
+  if (!conn) throw new Error("WHOOP ist nicht verbunden.");
   if (!needsRefresh(conn.expiresAt)) return conn.accessToken;
   const tokens = await refreshTokens(conn.refreshToken);
   await saveTokens(tokens);
   return tokens.accessToken;
 }
 
-/**
- * Authentifizierter GET gegen die WHOOP-API. Bei 401 wird einmal erneuert und
- * erneut versucht (falls das Token serverseitig doch abgelaufen war).
- */
-export async function whoopGet<T>(path: string): Promise<T> {
-  const conn = await getConnection();
-  if (!conn) throw new Error("WHOOP ist nicht verbunden.");
-
-  let token = await validAccessToken(conn);
-  let res = await fetch(`${WHOOP_API_BASE}${path}`, {
+/** Authentifizierter GET gegen die WHOOP-API mit einem bereits gültigen Token. */
+export async function whoopGet<T>(path: string, token: string): Promise<T> {
+  const res = await fetch(`${WHOOP_API_BASE}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
-
-  if (res.status === 401) {
-    const tokens = await refreshTokens(conn.refreshToken);
-    await saveTokens(tokens);
-    token = tokens.accessToken;
-    res = await fetch(`${WHOOP_API_BASE}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-  }
-
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`WHOOP-API ${res.status}: ${text.slice(0, 200)}`);
