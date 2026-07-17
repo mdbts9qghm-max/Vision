@@ -21,15 +21,19 @@ export async function GET(request: Request) {
 
   const store = await cookies();
   const savedState = store.get("whoop_oauth_state")?.value;
-  store.delete("whoop_oauth_state");
 
-  const back = (status: string) =>
-    NextResponse.redirect(new URL(`/dashboard?whoop=${status}`, request.url));
+  const back = (status: string, detail?: string) => {
+    const target = new URL(`/dashboard?whoop=${status}`, request.url);
+    if (detail) target.searchParams.set("d", detail.slice(0, 160));
+    const res = NextResponse.redirect(target);
+    res.cookies.delete("whoop_oauth_state");
+    return res;
+  };
 
-  if (oauthError) return back("denied");
-  if (!code || !state || !savedState || state !== savedState) {
-    return back("error");
-  }
+  if (oauthError) return back("denied", oauthError);
+  if (!code || !state) return back("error", "Code oder State fehlt");
+  if (!savedState) return back("error", "State-Cookie fehlt");
+  if (state !== savedState) return back("error", "State stimmt nicht");
 
   try {
     const tokens = await exchangeCode(code, whoopRedirectUri(url.origin));
@@ -41,7 +45,7 @@ export async function GET(request: Request) {
       // Sync-Fehler ignorieren — Verbindung steht trotzdem.
     }
     return back("connected");
-  } catch {
-    return back("error");
+  } catch (e) {
+    return back("error", e instanceof Error ? e.message : "Token-Tausch fehlgeschlagen");
   }
 }

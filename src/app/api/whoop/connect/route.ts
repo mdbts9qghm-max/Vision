@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { isAuthenticated } from "@/server/auth";
 import { whoopConfigured, whoopRedirectUri } from "@/server/whoop/config";
 import { buildAuthUrl } from "@/server/whoop/oauth";
@@ -19,16 +18,18 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const state = crypto.randomUUID();
-  const store = await cookies();
-  store.set("whoop_oauth_state", state, {
+
+  // Cookie DIREKT an die Redirect-Antwort hängen — nur so wird der Set-Cookie
+  // Header bei einer Weiterleitung zuverlässig mitgeschickt (Next.js-Fallstrick).
+  const res = NextResponse.redirect(
+    buildAuthUrl(whoopRedirectUri(url.origin), state),
+  );
+  res.cookies.set("whoop_oauth_state", state, {
     httpOnly: true,
     secure: url.protocol === "https:",
     sameSite: "lax",
     path: "/",
     maxAge: 600,
   });
-
-  return NextResponse.redirect(
-    buildAuthUrl(whoopRedirectUri(url.origin), state),
-  );
+  return res;
 }

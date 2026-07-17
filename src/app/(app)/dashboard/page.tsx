@@ -41,11 +41,11 @@ export const metadata: Metadata = { title: "Heute — Vision" };
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ whoop?: string }>;
+  searchParams: Promise<{ whoop?: string; d?: string }>;
 }) {
   const today = todayISO();
   const currentWeek = weekStartISO(today);
-  const { whoop: whoopFlash } = await searchParams;
+  const { whoop: whoopFlash, d: whoopDetail } = await searchParams;
   const {
     habits: all,
     goals,
@@ -166,6 +166,7 @@ export default async function DashboardPage({
             connected: whoop.connected,
             lastSyncAt: whoop.lastSyncAt,
             flash: whoopFlash,
+            detail: whoopDetail,
           }}
         />
       </section>

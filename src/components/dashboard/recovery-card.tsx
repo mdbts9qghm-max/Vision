@@ -36,6 +36,7 @@ export function RecoveryCard({
     connected: boolean;
     lastSyncAt?: string;
     flash?: string;
+    detail?: string;
   };
 }) {
   return (
@@ -99,6 +100,7 @@ export function RecoveryCard({
           connected={whoop.connected}
           lastSyncAt={whoop.lastSyncAt}
           flash={whoop.flash}
+          detail={whoop.detail}
         />
 
         <WhoopInputs

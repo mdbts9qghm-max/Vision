@@ -27,20 +27,23 @@ export function WhoopConnect({
   connected,
   lastSyncAt,
   flash,
+  detail,
 }: {
   configured: boolean;
   connected: boolean;
   lastSyncAt?: string;
   flash?: string;
+  detail?: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const withDetail = (text: string) => (detail ? `${text} (${detail})` : text);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(
     flash === "connected"
       ? { text: "WHOOP verbunden.", ok: true }
       : flash === "denied"
-        ? { text: "Verbindung abgebrochen.", ok: false }
+        ? { text: withDetail("Verbindung abgebrochen."), ok: false }
         : flash === "error"
-          ? { text: "Verbindung fehlgeschlagen.", ok: false }
+          ? { text: withDetail("Verbindung fehlgeschlagen."), ok: false }
           : flash === "unconfigured"
             ? { text: "WHOOP-Zugang nicht konfiguriert.", ok: false }
             : null,
