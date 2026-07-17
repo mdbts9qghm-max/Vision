@@ -39,16 +39,21 @@ export async function GET() {
     expiresAt: conn.expiresAt,
     needsRefresh: needsRefresh(conn.expiresAt),
     accessTokenLen: token?.length ?? 0,
-    accessTokenPrefix: token ? token.slice(0, 6) : null,
+    accessTokenPrefix: token ? token.slice(0, 8) : null,
+    accessLooksJwt: token?.startsWith("ey") ?? false,
     refreshTokenLen: conn.refreshToken?.length ?? 0,
+    refreshTokenPrefix: conn.refreshToken ? conn.refreshToken.slice(0, 8) : null,
+    accessEqualsRefresh: token === conn.refreshToken,
     lastSyncAt: conn.lastSyncAt,
   };
 
   const probes = [
-    await probe("/v2/recovery?limit=1", token),
-    await probe("/v1/recovery?limit=1", token),
-    await probe("/v2/user/profile/basic", token),
-    await probe("/v1/user/profile/basic", token),
+    { label: "access->v2/recovery", ...(await probe("/v2/recovery?limit=1", token)) },
+    {
+      label: "refresh->v2/recovery (Vertausch-Test)",
+      ...(await probe("/v2/recovery?limit=1", conn.refreshToken)),
+    },
+    { label: "access->v2/profile", ...(await probe("/v2/user/profile/basic", token)) },
   ];
 
   return NextResponse.json(
