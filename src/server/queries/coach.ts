@@ -25,6 +25,10 @@ export interface CoachPageData {
   recentWorkouts: Workout[];
   /** Tage (im sichtbaren Fenster) mit bereits geloggtem Training. */
   loggedDates: Set<string>;
+  /** Längste je gelaufene Einzelstrecke (km) — für "Road to 100 km". */
+  longestRunKm: number;
+  /** Gesamte gelaufene Distanz (km). */
+  totalRunKm: number;
 }
 
 /**
@@ -47,6 +51,7 @@ export async function loadCoachPage(
     weightRows,
     recentRows,
     windowWorkoutRows,
+    runStatsRows,
   ] = await db.batch([
     db.select().from(coachSettings),
     db
@@ -91,6 +96,12 @@ export async function loadCoachPage(
       .select({ date: workouts.date })
       .from(workouts)
       .where(and(gte(workouts.date, today), lte(workouts.date, horizon))),
+    db
+      .select({
+        longest: sql<number>`coalesce(max(${workouts.distanceKm}), 0)`,
+        total: sql<number>`coalesce(sum(${workouts.distanceKm}), 0)`,
+      })
+      .from(workouts),
   ]);
 
   const shiftMap: Record<string, ShiftType> = {};
@@ -109,6 +120,8 @@ export async function loadCoachPage(
     weightSeries: weightRows,
     recentWorkouts: recentRows,
     loggedDates: new Set(windowWorkoutRows.map((w) => w.date)),
+    longestRunKm: runStatsRows[0]?.longest ?? 0,
+    totalRunKm: runStatsRows[0]?.total ?? 0,
   };
 }
 

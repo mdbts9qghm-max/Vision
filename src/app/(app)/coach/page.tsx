@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
 import { CoachCalendar, type CalDay } from "@/components/coach/coach-calendar";
+import { RoadToUltra } from "@/components/coach/road-to-ultra";
 import { WeightChart } from "@/components/fitness/weight-chart-lazy";
 import { WorkoutForm } from "@/components/fitness/workout-form";
 import { WorkoutList } from "@/components/fitness/workout-list";
@@ -35,6 +36,8 @@ export default async function CoachPage() {
     weightSeries,
     recentWorkouts,
     loggedDates,
+    longestRunKm,
+    totalRunKm,
   } = await loadCoachPage(today, horizon, currentWeek);
   const weightTrend = trailingAverage(weightSeries, 7);
 
@@ -91,6 +94,8 @@ export default async function CoachPage() {
             : ` · +${settings.progressionPct} % Progression, Deload alle ${settings.deloadEveryWeeks} Wochen`}
         </p>
       </header>
+
+      <RoadToUltra longestRunKm={longestRunKm} totalRunKm={totalRunKm} />
 
       <Card>
         <CardContent className="flex items-center gap-4 py-4">
