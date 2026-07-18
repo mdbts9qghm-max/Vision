@@ -20,7 +20,15 @@ const isoWeekdaySchema = z.union([
   z.literal(7),
 ]) satisfies z.ZodType<IsoWeekday>;
 
-const shiftTypeSchema = z.enum(["day", "night", "sleep", "free", "v"]);
+const shiftTypeSchema = z.enum([
+  "day",
+  "night",
+  "sleep",
+  "free",
+  "v",
+  "sick",
+  "vacation",
+]);
 
 const recurrenceSchema = z
   .discriminatedUnion("type", [

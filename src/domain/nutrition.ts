@@ -137,11 +137,18 @@ export function shiftFuelTips(
         "Nach dem Aufstehen (~14 Uhr) proteinreich essen und den Tag über auffüllen.",
         "Nachmittags kein Koffein mehr, damit der Nachholschlaf klappt.",
       ];
+    case "vacation":
     case "free":
       return [
         "Normaler Tagesrhythmus — die Chance für saubere, regelmäßige Mahlzeiten.",
         "Vor der Schlüsseleinheit kohlenhydratreich frühstücken.",
         "Letztes Koffein ~15 Uhr.",
+      ];
+    case "sick":
+      return [
+        "Krank: leichte, nährstoffreiche Kost — Suppe, Obst, genug Protein.",
+        "Viel trinken (Wasser, Tee) — Flüssigkeit hilft beim Gesundwerden.",
+        "Kein Leistungsdruck beim Essen; iss, worauf du Appetit hast.",
       ];
   }
 }

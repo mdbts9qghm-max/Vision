@@ -69,7 +69,7 @@ export const PRIORITY_LABEL: Record<"low" | "medium" | "high", string> = {
 };
 
 export const SHIFT_TYPE_LABEL: Record<
-  "day" | "night" | "sleep" | "free" | "v",
+  "day" | "night" | "sleep" | "free" | "v" | "sick" | "vacation",
   string
 > = {
   day: "Tagschicht",
@@ -77,11 +77,13 @@ export const SHIFT_TYPE_LABEL: Record<
   sleep: "Schlaftag",
   free: "Frei",
   v: "V-Schicht",
+  sick: "Krank",
+  vacation: "Urlaub",
 };
 
 /** Kernzeiten je Schichtart — V-Schicht liegt willkürlich. */
 export const SHIFT_TIME_LABEL: Record<
-  "day" | "night" | "sleep" | "free" | "v",
+  "day" | "night" | "sleep" | "free" | "v" | "sick" | "vacation",
   string
 > = {
   day: "07:00–19:00",
@@ -89,6 +91,8 @@ export const SHIFT_TIME_LABEL: Record<
   sleep: "Schlaf bis ~14:00, danach frei",
   free: "ganzer Tag frei",
   v: "≈08:00–20:00 (variabel)",
+  sick: "Krankmeldung — Ruhe & Erholung",
+  vacation: "Urlaub — ganzer Tag frei",
 };
 
 export const SESSION_KIND_LABEL: Record<

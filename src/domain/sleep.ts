@@ -197,9 +197,10 @@ export function sleepPlan(
         ],
       };
 
+    case "vacation":
     case "free":
       return {
-        title: "Freischicht",
+        title: shift === "vacation" ? "Urlaub" : "Freischicht",
         segments: [
           ...span(hm(23), hm(31), "sleep", "Nachtschlaf"),
           {
@@ -256,6 +257,30 @@ export function sleepPlan(
           "Schlafraum dunkel & kühl, Zubettgehen ~23 Uhr.",
         ],
       };
+
+    case "sick":
+      return {
+        title: "Krank — Erholung",
+        segments: [
+          ...span(hm(22), hm(32), "sleep", "Langer Schlaf"),
+          { startMin: hm(13), endMin: hm(14, 30), kind: "nap", label: "Mittagsschlaf" },
+        ],
+        markers: [
+          { atMin: hm(8), kind: "wake", label: "Ausschlafen" },
+          { atMin: hm(12), kind: "meal", label: "Leichte Mahlzeit" },
+        ],
+        sleepTargetHours: 9,
+        tips: [
+          "Krank = kein Training. Der Körper braucht die Energie fürs Gesundwerden.",
+          "Viel trinken, leichte Kost, so viel schlafen wie möglich.",
+          "Erst wieder einsteigen, wenn du fieberfrei bist — dann ein paar Tage sehr locker.",
+        ],
+        eveningRoutine: [
+          "Früh ins Bett — Schlaf hat absolute Priorität.",
+          "Warm halten, viel trinken (Tee, Wasser).",
+          "Kein Bildschirmstress; dem Körper Ruhe gönnen.",
+        ],
+      };
   }
 }
 
@@ -280,10 +305,19 @@ export function tomorrowPrep(
       return [
         "Morgen V-Schicht (~08–20 Uhr): heute ausreichend schlafen; Training morgen nur kurz möglich.",
       ];
+    case "vacation":
+      return [
+        "Morgen Urlaubstag — wie ein freier Tag der beste Trainingstag: heute voll ausschlafen.",
+        "Ausrüstung und Verpflegung für die Schlüsseleinheit schon heute richten.",
+      ];
     case "free":
       return [
         "Morgen Freischicht — dein bester Trainingstag: heute voll ausschlafen.",
         "Ausrüstung und Verpflegung für die Schlüsseleinheit schon heute richten.",
+      ];
+    case "sick":
+      return [
+        "Morgen weiter auskurieren: kein Training einplanen — Ruhe, Schlaf und viel trinken.",
       ];
     case "sleep":
       return [

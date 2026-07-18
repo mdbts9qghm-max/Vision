@@ -45,6 +45,8 @@ const SHIFT_TINT: Record<ShiftType, string> = {
   v: "bg-sky-500/15",
   night: "bg-indigo-500/25",
   sleep: "bg-violet-500/15",
+  vacation: "bg-teal-500/20",
+  sick: "bg-rose-500/20",
 };
 
 const SHIFT_ABBR: Record<ShiftType, string> = {
@@ -53,6 +55,8 @@ const SHIFT_ABBR: Record<ShiftType, string> = {
   sleep: "S",
   free: "F",
   v: "V",
+  vacation: "U",
+  sick: "K",
 };
 
 const dayNum = (iso: string) => Number(iso.slice(8, 10));

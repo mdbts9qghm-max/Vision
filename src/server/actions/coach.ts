@@ -14,6 +14,7 @@ import {
   planStartblockWeek,
   planWeek,
   type CoachParams,
+  type ShiftType,
 } from "@/domain/coach";
 import { plannedSessionToWorkout } from "@/domain/session-workout";
 import {
@@ -68,13 +69,15 @@ export async function logPlannedSession(input: {
 
 const shiftSchema = z.object({
   date: z.string().refine(isValidISODate, "Ungültiges Datum."),
-  type: z.enum(["day", "night", "sleep", "free", "v"]).nullable(),
+  type: z
+    .enum(["day", "night", "sleep", "free", "v", "sick", "vacation"])
+    .nullable(),
 });
 
 /** Schicht setzen/entfernen und den Plan ab heute neu berechnen. */
 export async function setShift(input: {
   date: string;
-  type: "day" | "night" | "sleep" | "free" | "v" | null;
+  type: ShiftType | null;
 }): Promise<ActionState> {
   await requireAuth();
   const parsed = shiftSchema.safeParse(input);

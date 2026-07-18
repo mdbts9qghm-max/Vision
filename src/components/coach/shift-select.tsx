@@ -13,6 +13,8 @@ const OPTIONS: Array<{ value: ShiftType | ""; label: string }> = [
   { value: "sleep", label: SHIFT_TYPE_LABEL.sleep },
   { value: "free", label: SHIFT_TYPE_LABEL.free },
   { value: "v", label: SHIFT_TYPE_LABEL.v },
+  { value: "vacation", label: SHIFT_TYPE_LABEL.vacation },
+  { value: "sick", label: SHIFT_TYPE_LABEL.sick },
 ];
 
 /** Kompakte Schichtauswahl pro Tag; jede Änderung plant sofort neu. */

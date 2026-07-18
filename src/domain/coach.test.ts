@@ -286,3 +286,22 @@ describe("planWeek — Regelzuordnung", () => {
     expect(plan.days[0].reason).toContain("Schicht unbekannt");
   });
 });
+
+describe("planWeek — krank & Urlaub", () => {
+  it("Krank-Tage sind immer Ruhe mit Krank-Begründung — kein Training", () => {
+    const map = week(["sick", "sick", "free", "day", "free", "night", "sleep"]);
+    const plan = planWeek(params, WEEK, map, 25);
+    expect(plan.days[0].kind).toBe("rest");
+    expect(plan.days[1].kind).toBe("rest");
+    expect(plan.days[0].reason).toContain("Krank");
+  });
+
+  it("Urlaub verhält sich wie Freischicht (bekommt den Long Run)", () => {
+    // Nur ein Trainingstag: Urlaub — muss den Long Run tragen wie eine Frei.
+    const map = week(["day", "day", "vacation", "day", "day", "day", "day"]);
+    const plan = planWeek(params, WEEK, map, 25);
+    const vacationDay = plan.days[2];
+    expect(vacationDay.kind).toBe("longrun");
+    expect(vacationDay.targetKm).toBeGreaterThan(0);
+  });
+});

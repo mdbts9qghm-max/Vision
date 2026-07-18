@@ -20,7 +20,14 @@
 
 import { addDaysISO } from "./dates";
 
-export type ShiftType = "day" | "night" | "sleep" | "free" | "v";
+export type ShiftType =
+  | "day"
+  | "night"
+  | "sleep"
+  | "free"
+  | "v"
+  | "sick"
+  | "vacation";
 export type SessionKind =
   | "longrun"
   | "run"
@@ -40,6 +47,9 @@ const FIRST_NIGHT_REST_REASON =
 
 const FOLLOW_NIGHT_REST_REASON =
   "Folge-Nachtschicht: kumulierte Schlafschuld — der Vormittag gehört dem Nachholschlaf, nicht dem Training.";
+
+const SICK_REST_REASON =
+  "Krank gemeldet: heute kein Training. Ruhe, viel trinken, schlafen — Gesundwerden hat Vorrang. Wieder einsteigen, wenn du fieberfrei bist, dann ein paar Tage sehr locker.";
 
 export interface CoachParams {
   weeklyKmBase: number;
@@ -100,7 +110,18 @@ const SHIFT_LABEL: Record<ShiftType, string> = {
   sleep: "Schlaftag",
   free: "Freischicht",
   v: "V-Schicht",
+  sick: "Krank",
+  vacation: "Urlaub",
 };
+
+/**
+ * Schicht fürs Training normalisieren: Urlaub verhält sich wie eine
+ * Freischicht (bester Trainingstag). `sick` bleibt erhalten und wird in den
+ * Planern zum erzwungenen Ruhetag.
+ */
+function trainingShift(s: ShiftType | undefined): ShiftType | undefined {
+  return s === "vacation" ? "free" : s;
+}
 
 /**
  * Basis-Wochenziel nach Formel: Progression + zyklischer Deload,
@@ -177,7 +198,7 @@ export function planStartblockWeek(
 ): WeekPlan {
   const spec = STARTBLOCK_WEEKS[Math.min(weekIndex, 5)];
   const dates = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
-  const shiftOf = (d: string) => shiftByDate[d];
+  const shiftOf = (d: string) => trainingShift(shiftByDate[d]);
   const days = new Map<string, PlannedDay>();
   const claim = (day: PlannedDay) => days.set(day.date, day);
   const isFirstNight = (d: string) =>
@@ -192,6 +213,8 @@ export function planStartblockWeek(
         optional: false,
         reason: "Schicht unbekannt — bitte eintragen, dann plane ich den Tag.",
       });
+    } else if (s === "sick") {
+      claim({ date: d, kind: "rest", optional: false, reason: SICK_REST_REASON });
     } else if (s === "night" && !isFirstNight(d)) {
       claim({
         date: d,
@@ -304,7 +327,7 @@ export function planWeek(
   phase: Phase = "ausbau",
 ): WeekPlan {
   const dates = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
-  const shiftOf = (d: string) => shiftByDate[d];
+  const shiftOf = (d: string) => trainingShift(shiftByDate[d]);
 
   const nightCount = dates.filter((d) => shiftOf(d) === "night").length;
   const nightDeload = nightCount >= 3;
@@ -341,6 +364,8 @@ export function planWeek(
     const s = shiftOf(d);
     if (s === undefined) {
       claim(d, "rest", "Schicht unbekannt — bitte eintragen, dann plane ich den Tag.");
+    } else if (s === "sick") {
+      claim(d, "rest", SICK_REST_REASON);
     } else if (s === "night" && !isFirstNight(d)) {
       claim(d, "rest", FOLLOW_NIGHT_REST_REASON);
     } else if (s === "day") {

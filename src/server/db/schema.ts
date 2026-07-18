@@ -178,8 +178,9 @@ export const workouts = sqliteTable(
 export const shifts = sqliteTable("shifts", {
   id: id(),
   date: text("date").notNull().unique(), // YYYY-MM-DD
-  type: text("type", { enum: ["day", "night", "sleep", "free", "v"] })
-    .notNull(),
+  type: text("type", {
+    enum: ["day", "night", "sleep", "free", "v", "sick", "vacation"],
+  }).notNull(),
   createdAt: createdAt(),
 });
 
