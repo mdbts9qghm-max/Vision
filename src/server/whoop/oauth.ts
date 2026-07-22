@@ -7,6 +7,7 @@ import {
   WHOOP_AUTH_URL,
   WHOOP_SCOPES,
   WHOOP_TOKEN_URL,
+  WHOOP_USER_AGENT,
   whoopClientId,
   whoopClientSecret,
 } from "./config";
@@ -43,7 +44,11 @@ interface TokenResponse {
 async function postToken(body: URLSearchParams): Promise<WhoopTokens> {
   const res = await fetch(WHOOP_TOKEN_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": WHOOP_USER_AGENT,
+      Accept: "application/json",
+    },
     body,
   });
   if (!res.ok) {

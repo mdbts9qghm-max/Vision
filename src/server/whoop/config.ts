@@ -8,6 +8,9 @@ export const WHOOP_AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2/auth";
 export const WHOOP_TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token";
 export const WHOOP_API_BASE = "https://api.prod.whoop.com/developer";
 
+// Manche API-Gateways lehnen Requests ohne User-Agent generisch ab.
+export const WHOOP_USER_AGENT = "Vision-LifeOS/1.0";
+
 // offline = Refresh-Token; der Rest sind Lesezugriffe für unsere Werte.
 export const WHOOP_SCOPES = [
   "offline",

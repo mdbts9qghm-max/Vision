@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/server/auth";
 import { getConnection } from "@/server/whoop/client";
 import { needsRefresh } from "@/domain/whoop";
-import { WHOOP_API_BASE } from "@/server/whoop/config";
+import { WHOOP_API_BASE, WHOOP_USER_AGENT } from "@/server/whoop/config";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -15,7 +15,11 @@ export const runtime = "nodejs";
 async function probe(path: string, token: string) {
   try {
     const res = await fetch(`${WHOOP_API_BASE}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "User-Agent": WHOOP_USER_AGENT,
+        Accept: "application/json",
+      },
       cache: "no-store",
     });
     const body = await res.text().catch(() => "");

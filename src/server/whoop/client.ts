@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { whoopConnection } from "@/server/db/schema";
 import { expiryFromNow, needsRefresh } from "@/domain/whoop";
-import { WHOOP_API_BASE } from "./config";
+import { WHOOP_API_BASE, WHOOP_USER_AGENT } from "./config";
 import { refreshTokens, type WhoopTokens } from "./oauth";
 
 export type WhoopConnection = typeof whoopConnection.$inferSelect;
@@ -86,7 +86,11 @@ export async function refreshAccessToken(): Promise<string> {
 /** Authentifizierter GET gegen die WHOOP-API mit einem bereits gültigen Token. */
 export async function whoopGet<T>(path: string, token: string): Promise<T> {
   const res = await fetch(`${WHOOP_API_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "User-Agent": WHOOP_USER_AGENT,
+      Accept: "application/json",
+    },
     cache: "no-store",
   });
   if (!res.ok) {
