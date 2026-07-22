@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/server/auth";
-import { getConnection } from "@/server/whoop/client";
+import { getConnection, saveTokens } from "@/server/whoop/client";
+import { refreshTokens } from "@/server/whoop/oauth";
 import { needsRefresh } from "@/domain/whoop";
 import { WHOOP_API_BASE, WHOOP_USER_AGENT } from "@/server/whoop/config";
 
@@ -54,15 +55,27 @@ export async function GET() {
 
   const probes = [
     { label: "access->v2/recovery", ...(await probe("/v2/recovery?limit=1", token)) },
-    {
-      label: "refresh->v2/recovery (Vertausch-Test)",
-      ...(await probe("/v2/recovery?limit=1", conn.refreshToken)),
-    },
     { label: "access->v2/profile", ...(await probe("/v2/user/profile/basic", token)) },
   ];
 
+  // Refresh-Test: neu ausstellen und (bei Erfolg) speichern + mit dem frischen
+  // Token nochmal prüfen. So sehen wir, ob der Refresh die kaputte Stelle ist.
+  let refreshTest: Record<string, unknown>;
+  try {
+    const t = await refreshTokens(conn.refreshToken);
+    await saveTokens(t);
+    refreshTest = {
+      ok: true,
+      newAtLen: t.accessToken.length,
+      newRtLen: t.refreshToken?.length ?? 0,
+      probeWithNew: (await probe("/v2/recovery?limit=1", t.accessToken)).status,
+    };
+  } catch (e) {
+    refreshTest = { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+
   return NextResponse.json(
-    { info, probes },
+    { info, probes, refreshTest },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

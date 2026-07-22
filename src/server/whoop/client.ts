@@ -34,9 +34,17 @@ export async function getConnection(): Promise<WhoopConnection | undefined> {
 
 /** Tokens speichern (Upsert der Singleton-Zeile). */
 export async function saveTokens(tokens: WhoopTokens): Promise<void> {
+  // Manche OAuth-Server geben beim Refresh KEIN neues Refresh-Token zurück.
+  // Dann das bestehende behalten, statt es mit Leer zu überschreiben (sonst
+  // schlägt der nächste Refresh fehl).
+  let refreshToken = tokens.refreshToken;
+  if (!refreshToken) {
+    const existing = await getConnection();
+    refreshToken = existing?.refreshToken ?? "";
+  }
   const row = {
     accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
+    refreshToken,
     expiresAt: expiryFromNow(tokens.expiresIn),
     scope: tokens.scope ?? null,
     tokenMeta: tokens.rawMeta ?? null,
