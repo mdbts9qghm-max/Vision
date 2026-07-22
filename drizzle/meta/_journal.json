@@ -71,6 +71,13 @@
       "when": 1784321189108,
       "tag": "0009_real_susan_delgado",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1784756395098,
+      "tag": "0010_pink_warhawk",
+      "breakpoints": true
     }
   ]
 }

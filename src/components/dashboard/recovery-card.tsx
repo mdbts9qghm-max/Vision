@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
 import { ReadinessCheck } from "./readiness-check";
 import { WhoopInputs } from "./whoop-inputs";
-import { WhoopConnect } from "./whoop-connect";
 
 function recoveryColor(pct: number): string {
   if (pct < RECOVERY_RED_BELOW) return "text-destructive";
@@ -14,9 +13,9 @@ function recoveryColor(pct: number): string {
 }
 
 /**
- * WHOOP-inspirierte Erholungs-Karte: Recovery-Ring (falls geloggt) + Schlaf,
- * HRV & Ruhepuls, der subjektive Ein-Tap-Check und die WHOOP-Erfassung direkt
- * an Ort und Stelle. Alles speist die Autoregulation.
+ * Erholungs-Karte: Recovery-Ring (falls geloggt) + Schlaf, HRV & Ruhepuls,
+ * der subjektive Ein-Tap-Check und der tägliche Morgen-Check zum Eintragen der
+ * WHOOP-Werte. Alles speist die Autoregulation.
  */
 export function RecoveryCard({
   recoveryPct,
@@ -24,20 +23,12 @@ export function RecoveryCard({
   hrvToday,
   rhrToday,
   readiness,
-  whoop,
 }: {
   recoveryPct?: number;
   sleepHours?: number;
   hrvToday?: number;
   rhrToday?: number;
   readiness: ReadinessScore | null;
-  whoop: {
-    configured: boolean;
-    connected: boolean;
-    lastSyncAt?: string;
-    flash?: string;
-    detail?: string;
-  };
 }) {
   return (
     <Card>
@@ -94,14 +85,6 @@ export function RecoveryCard({
           <p className="text-sm text-muted-foreground">Wie fühlst du dich?</p>
           <ReadinessCheck value={readiness} />
         </div>
-
-        <WhoopConnect
-          configured={whoop.configured}
-          connected={whoop.connected}
-          lastSyncAt={whoop.lastSyncAt}
-          flash={whoop.flash}
-          detail={whoop.detail}
-        />
 
         <WhoopInputs
           sleepToday={sleepHours}
