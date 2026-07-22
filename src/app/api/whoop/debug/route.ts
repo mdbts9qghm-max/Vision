@@ -1,9 +1,49 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/server/auth";
-import { getConnection, saveTokens } from "@/server/whoop/client";
-import { refreshTokens } from "@/server/whoop/oauth";
+import { getConnection } from "@/server/whoop/client";
 import { needsRefresh } from "@/domain/whoop";
-import { WHOOP_API_BASE, WHOOP_USER_AGENT } from "@/server/whoop/config";
+import {
+  WHOOP_API_BASE,
+  WHOOP_TOKEN_URL,
+  WHOOP_USER_AGENT,
+  whoopClientId,
+  whoopClientSecret,
+} from "@/server/whoop/config";
+
+/** Probiert eine Refresh-Variante und meldet Status + Antwort (kein Speichern). */
+async function tryRefresh(
+  refreshToken: string,
+  opts: { basic: boolean; scope: boolean },
+): Promise<{ variant: string; status: number; body: string }> {
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+  });
+  const headers: Record<string, string> = {
+    "Content-Type": "application/x-www-form-urlencoded",
+    "User-Agent": WHOOP_USER_AGENT,
+    Accept: "application/json",
+  };
+  if (opts.basic) {
+    const cred = Buffer.from(
+      `${whoopClientId()}:${whoopClientSecret()}`,
+    ).toString("base64");
+    headers.Authorization = `Basic ${cred}`;
+  } else {
+    body.set("client_id", whoopClientId());
+    body.set("client_secret", whoopClientSecret());
+  }
+  if (opts.scope) body.set("scope", "offline");
+
+  const variant = `${opts.basic ? "basic" : "body"}Auth${opts.scope ? "+scope" : ""}`;
+  try {
+    const res = await fetch(WHOOP_TOKEN_URL, { method: "POST", headers, body });
+    const text = await res.text().catch(() => "");
+    return { variant, status: res.status, body: text.slice(0, 90) };
+  } catch (e) {
+    return { variant, status: 0, body: e instanceof Error ? e.message : String(e) };
+  }
+}
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -58,24 +98,18 @@ export async function GET() {
     { label: "access->v2/profile", ...(await probe("/v2/user/profile/basic", token)) },
   ];
 
-  // Refresh-Test: neu ausstellen und (bei Erfolg) speichern + mit dem frischen
-  // Token nochmal prüfen. So sehen wir, ob der Refresh die kaputte Stelle ist.
-  let refreshTest: Record<string, unknown>;
-  try {
-    const t = await refreshTokens(conn.refreshToken);
-    await saveTokens(t);
-    refreshTest = {
-      ok: true,
-      newAtLen: t.accessToken.length,
-      newRtLen: t.refreshToken?.length ?? 0,
-      probeWithNew: (await probe("/v2/recovery?limit=1", t.accessToken)).status,
-    };
-  } catch (e) {
-    refreshTest = { ok: false, error: e instanceof Error ? e.message : String(e) };
-  }
+  // Refresh-Format-Test: 4 gängige Varianten nacheinander. Die erste, die 200
+  // liefert, verrät das korrekte Format. (Ein Erfolg verbraucht das Refresh-
+  // Token — spätere Varianten scheitern dann; das ist ok fürs Diagnostizieren.)
+  const refreshVariants = [
+    await tryRefresh(conn.refreshToken, { basic: false, scope: true }),
+    await tryRefresh(conn.refreshToken, { basic: false, scope: false }),
+    await tryRefresh(conn.refreshToken, { basic: true, scope: true }),
+    await tryRefresh(conn.refreshToken, { basic: true, scope: false }),
+  ];
 
   return NextResponse.json(
-    { info, probes, refreshTest },
+    { info, probes, refreshVariants },
     { headers: { "Cache-Control": "no-store" } },
   );
 }
