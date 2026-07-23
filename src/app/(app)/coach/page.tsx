@@ -3,7 +3,7 @@ import { addDaysISO, diffDaysISO, todayISO, weekStartISO } from "@/domain/dates"
 import { PHASE_LABEL, phaseForWeek } from "@/domain/coach";
 import { trailingAverage } from "@/domain/fitness";
 import { loadCoachPage } from "@/server/queries/coach";
-import { regeneratePlan } from "@/server/actions/coach";
+import { regeneratePlan, restartProgram } from "@/server/actions/coach";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
@@ -20,6 +20,11 @@ export const metadata: Metadata = { title: "Coach — Vision" };
 async function regenerateAction() {
   "use server";
   await regeneratePlan();
+}
+
+async function restartAction() {
+  "use server";
+  await restartProgram();
 }
 
 export default async function CoachPage() {
@@ -93,6 +98,16 @@ export default async function CoachPage() {
             ? " · Ziel: nach 6 Wochen 30 Min. am Stück laufen"
             : ` · +${settings.progressionPct} % Progression, Deload alle ${settings.deloadEveryWeeks} Wochen`}
         </p>
+        <form action={restartAction}>
+          <Button
+            type="submit"
+            variant="outline"
+            size="sm"
+            className="mt-1 border-primary/50"
+          >
+            Programm ab dieser Woche starten (Woche 1)
+          </Button>
+        </form>
       </header>
 
       <RoadToUltra longestRunKm={longestRunKm} totalRunKm={totalRunKm} />

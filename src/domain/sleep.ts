@@ -186,9 +186,9 @@ export function sleepPlan(
         ],
         sleepTargetHours: 6.5,
         tips: [
-          "~6 h Tagschlaf sind zu wenig — Erholung über 24–48 h ziehen: zweiter Nap oder früh ins Bett.",
-          "Nachmittags fällt die freie Zeit ins Leistungshoch, aber du bist im Defizit: nur locker/moderat, keine Qualität.",
-          "Schlaf hat heute Vorrang vor jeder zusätzlichen Einheit.",
+          "Flexibler Trainingstag: War der Tagschlaf gut, nachmittags ein lockerer Lauf (Leistungshoch nutzen) — war er schlecht, regenerieren.",
+          "Kein Qualitätsreiz im Schlafdefizit: locker/moderat, Talk-Test. Schlaf/Recovery eintragen — die Autoregulation entscheidet mit.",
+          "~6 h Tagschlaf sind wenig — Erholung über 24–48 h ziehen: zweiter Nap oder früh ins Bett.",
         ],
         eveningRoutine: [
           "Heute früh ins Bett (~22 Uhr), um die Nachtschicht-Erholung nachzuholen.",

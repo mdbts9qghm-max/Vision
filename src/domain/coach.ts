@@ -51,6 +51,9 @@ const FOLLOW_NIGHT_REST_REASON =
 const SICK_REST_REASON =
   "Krank gemeldet: heute kein Training. Ruhe, viel trinken, schlafen — Gesundwerden hat Vorrang. Wieder einsteigen, wenn du fieberfrei bist, dann ein paar Tage sehr locker.";
 
+const SLEEP_FLEX_REASON =
+  "Schlaftag flexibel: War der Tagschlaf gut, lockerer Lauf am Nachmittag (Zone 2, Talk-Test) — nach Gefühl, keine feste Distanz. War der Schlaf schlecht, regenerieren. Trag Schlaf/Recovery im Heute-Tab ein: bei einer schlechten Nacht stuft die Autoregulation automatisch auf Ruhe.";
+
 export interface CoachParams {
   weeklyKmBase: number;
   progressionPct: number; // z.B. 7 = +7 %/Woche
@@ -296,6 +299,11 @@ export function planStartblockWeek(
 
   for (const d of dates) {
     if (days.has(d)) continue;
+    // Freier Schlaftag: flexible optionale Einheit statt Standard-Ruhe.
+    if (shiftOf(d) === "sleep") {
+      claim({ date: d, kind: "easy", optional: true, reason: SLEEP_FLEX_REASON });
+      continue;
+    }
     claim({
       date: d,
       kind: "rest",
@@ -540,17 +548,22 @@ export function planWeek(
     });
   }
 
-  // 5) Rest: Ruhetage.
+  // 5) Rest bzw. flexibler Schlaftag. Ein freier Schlaftag ist kein
+  //    Standard-Ruhetag mehr, sondern eine optionale, schlafqualitäts-
+  //    abhängige Einheit (Hybrid-Ansatz) — die Autoregulation macht bei
+  //    schlechter Nacht von selbst Ruhe daraus.
   for (const d of available()) {
     const s = shiftOf(d);
+    if (s === "sleep") {
+      claim(d, "easy", SLEEP_FLEX_REASON, undefined, true);
+      continue;
+    }
     claim(
       d,
       "rest",
-      s === "sleep"
-        ? "Ruhetag: Schlaf nachholen ist heute das Training."
-        : s === "night"
-          ? FIRST_NIGHT_REST_REASON
-          : `Ruhetag (${s ? SHIFT_LABEL[s] : "—"}) — Erholung ist Teil des Plans.`,
+      s === "night"
+        ? FIRST_NIGHT_REST_REASON
+        : `Ruhetag (${s ? SHIFT_LABEL[s] : "—"}) — Erholung ist Teil des Plans.`,
     );
   }
 

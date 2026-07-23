@@ -5,7 +5,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "@/server/auth";
 import { db } from "@/server/db";
-import { plannedSessions, shifts, workouts } from "@/server/db/schema";
+import { coachSettings, plannedSessions, shifts, workouts } from "@/server/db/schema";
 import { addDaysISO, diffDaysISO, isValidISODate, todayISO, weekStartISO } from "@/domain/dates";
 import {
   baseTargetKm,
@@ -100,6 +100,23 @@ export async function setShift(input: {
 /** Plan für heute + 13 Tage neu berechnen (überschreibt nur Zukunft). */
 export async function regeneratePlan(): Promise<ActionState> {
   await requireAuth();
+  await regenerate();
+  revalidateCoachViews();
+  return {};
+}
+
+/**
+ * Programm (neu) starten: Die aktuelle Woche wird zu Woche 1 (Startblock).
+ * Setzt den Startzeitpunkt auf diesen Montag und rechnet den Plan neu.
+ */
+export async function restartProgram(): Promise<ActionState> {
+  await requireAuth();
+  await getOrCreateCoachSettings(); // stellt sicher, dass die Zeile existiert
+  const thisWeek = weekStartISO(todayISO());
+  await db
+    .update(coachSettings)
+    .set({ startWeek: thisWeek })
+    .where(eq(coachSettings.id, "singleton"));
   await regenerate();
   revalidateCoachViews();
   return {};
