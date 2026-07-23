@@ -178,19 +178,23 @@ const STARTBLOCK_WEEKS: Array<{
   runsMin: number[]; // aufsteigend, letzte = längste Einheit
   structure: string;
 }> = [
-  { runsMin: [20, 20, 20], structure: "2 Min. laufen / 2 Min. gehen" },
-  { runsMin: [25, 25, 25], structure: "3 Min. laufen / 2 Min. gehen" },
-  { runsMin: [30, 30, 30], structure: "4 Min. laufen / 1 Min. gehen" },
   {
-    runsMin: [20, 20, 20],
+    runsMin: [15, 15, 20],
     structure:
-      "3 Min. laufen / 1 Min. gehen — Entlastungswoche, nur Zone 1 bis unteres Zone 2",
+      "1 Min. laufen / 2 Min. gehen — ganz sanft starten, das Gehen ist vollwertiges Training",
   },
-  { runsMin: [30, 30, 40], structure: "5 Min. laufen / 1 Min. gehen" },
+  { runsMin: [20, 20, 20], structure: "1 Min. laufen / 1 Min. gehen" },
+  { runsMin: [20, 20, 25], structure: "2 Min. laufen / 1 Min. gehen" },
   {
-    runsMin: [30, 35, 45],
+    runsMin: [15, 20, 20],
     structure:
-      "durchgehend laufen, wenn es sich gut anfühlt — den Longrun weiter als Run-Walk",
+      "2 Min. laufen / 1 Min. gehen — Entlastungswoche, nur Zone 1 (ganz locker)",
+  },
+  { runsMin: [20, 25, 25], structure: "3 Min. laufen / 1 Min. gehen" },
+  {
+    runsMin: [25, 25, 30],
+    structure:
+      "4–5 Min. laufen / 1 Min. gehen — wo es sich gut anfühlt, ruhig länger am Stück",
   },
 ];
 

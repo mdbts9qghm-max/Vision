@@ -57,12 +57,14 @@ describe("planStartblockWeek — Run-Walk nach Minuten", () => {
   // Mo Tag, Di Frei, Mi Tag, Do Frei, Fr Nacht, Sa Nacht, So Schlaf
   const shifts = week(["day", "free", "day", "free", "night", "night", "sleep"]);
 
-  it("Woche 1: 3× 20 Min. mit 2/2-Struktur und Ruhetag dazwischen", () => {
+  it("Woche 1: sanfter Einstieg (1/2-Struktur), 3 Läufe mit Ruhetag dazwischen", () => {
     const plan = planStartblockWeek(WEEK, shifts, 0);
     const runs = plan.days.filter((d) => d.targetMin !== undefined);
     expect(runs).toHaveLength(3);
-    expect(runs.every((r) => r.targetMin === 20)).toBe(true);
-    expect(runs[0].reason).toContain("2 Min. laufen / 2 Min. gehen");
+    expect(runs.map((r) => r.targetMin).sort()).toEqual([15, 15, 20]);
+    expect(runs.some((r) => r.reason.includes("1 Min. laufen / 2 Min. gehen"))).toBe(
+      true,
+    );
     // kein Lauf an aufeinanderfolgenden Tagen
     const dates = runs.map((r) => r.date).sort();
     for (let i = 1; i < dates.length; i++) {
@@ -71,10 +73,10 @@ describe("planStartblockWeek — Run-Walk nach Minuten", () => {
     }
   });
 
-  it("Woche 5: längste Einheit (40 Min.) liegt auf der Freischicht", () => {
+  it("Woche 5: längste Einheit (25 Min.) liegt auf der Freischicht", () => {
     const plan = planStartblockWeek(WEEK, shifts, 4);
     const long = plan.days.find((d) => d.kind === "longrun");
-    expect(long?.targetMin).toBe(40);
+    expect(long?.targetMin).toBe(25);
     expect(long?.date).toBe("2026-07-14"); // erste Freischicht
   });
 

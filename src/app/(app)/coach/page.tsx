@@ -95,7 +95,7 @@ export default async function CoachPage() {
         <p className="text-sm text-muted-foreground">
           Woche {weekIndex + 1} · Phase: {PHASE_LABEL[phase]}
           {isStartblock
-            ? " · Ziel: nach 6 Wochen 30 Min. am Stück laufen"
+            ? " · Ziel: sanfter Run-Walk-Aufbau — Schritt für Schritt mehr am Stück laufen"
             : ` · +${settings.progressionPct} % Progression, Deload alle ${settings.deloadEveryWeeks} Wochen`}
         </p>
         <form action={restartAction}>
