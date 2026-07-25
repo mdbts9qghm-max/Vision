@@ -23,8 +23,8 @@ export function TabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <div className="mx-auto flex max-w-lg items-stretch justify-around">
+    <nav className="fixed inset-x-0 bottom-0 border-t border-border bg-background/75 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+      <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);
           return (
@@ -33,13 +33,23 @@ export function TabBar() {
               href={href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-w-12 flex-col items-center gap-1 whitespace-nowrap px-1.5 py-2 text-xs transition-colors",
+                "flex min-w-12 flex-col items-center gap-1 whitespace-nowrap px-1.5 pb-2 pt-1.5 text-[11px] font-medium transition-colors",
                 active
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Icon className="size-5" aria-hidden />
+              {/* Aktives Icon sitzt in einer leuchtenden Pille. */}
+              <span
+                className={cn(
+                  "flex h-7 w-11 items-center justify-center rounded-full transition-all duration-200",
+                  active
+                    ? "bg-primary/15 shadow-[0_0_16px_-4px_var(--primary)]"
+                    : "bg-transparent",
+                )}
+              >
+                <Icon className="size-5" aria-hidden />
+              </span>
               {label}
             </Link>
           );

@@ -26,7 +26,12 @@ export function TodayHabits({
           const week = weeklyProgress(habit.recurrence, completions, today, shifts);
           const measure = isMeasureHabit(habit);
           return (
-            <div key={habit.id} className="px-4 py-2.5">
+            <div
+              key={habit.id}
+              className={`px-4 py-2.5 transition-opacity ${
+                status === undefined ? "" : "opacity-60"
+              }`}
+            >
               <div className="flex items-center gap-3">
                 {measure ? (
                   <span
@@ -42,7 +47,13 @@ export function TodayHabits({
                   />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{habit.name}</p>
+                  <p
+                    className={`truncate text-sm font-medium ${
+                      status === "done" ? "text-muted-foreground line-through" : ""
+                    }`}
+                  >
+                    {habit.name}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {status === "skipped"
                       ? "Übersprungen"

@@ -90,7 +90,7 @@ export default async function CoachPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2 rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-card px-4 py-4">
+      <header className="space-y-2 relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/20 via-card to-card px-4 py-5 shadow-[0_10px_36px_-18px_var(--primary)]">
         <h1 className="text-2xl font-bold tracking-tight">Coach</h1>
         <p className="text-sm text-muted-foreground">
           Woche {weekIndex + 1} · Phase: {PHASE_LABEL[phase]}

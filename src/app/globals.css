@@ -60,23 +60,23 @@
 
 .dark {
   --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.606 0.25 293);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --foreground: oklch(0.985 0.002 286);
+  --card: oklch(0.212 0.014 286);
+  --card-foreground: oklch(0.985 0.002 286);
+  --popover: oklch(0.212 0.014 286);
+  --popover-foreground: oklch(0.985 0.002 286);
+  --primary: oklch(0.63 0.22 293);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.275 0.016 286);
+  --secondary-foreground: oklch(0.985 0.002 286);
+  --muted: oklch(0.275 0.016 286);
+  --muted-foreground: oklch(0.72 0.02 286);
+  --accent: oklch(0.29 0.02 288);
+  --accent-foreground: oklch(0.985 0.002 286);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.606 0.25 293);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.63 0.22 293);
 }
 
 @layer base {
@@ -85,5 +85,35 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Dezenter Lichtschein oben — nimmt dem Dunkel die Flachheit. */
+    background-image:
+      radial-gradient(
+        60rem 28rem at 50% -6rem,
+        color-mix(in oklab, var(--primary) 16%, transparent),
+        transparent 70%
+      );
+    background-attachment: fixed;
+  }
+  /* Zahlen in Ringen/Statistiken laufen nicht mehr in der Breite. */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /*
+   * Karten bekommen einen feinen Verlauf und eine hellere Oberkante — wirkt
+   * dadurch plastisch statt wie eine flache Fläche.
+   */
+  [data-slot="card"] {
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--foreground) 4%, transparent),
+      transparent 45%
+    );
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--foreground) 7%, transparent),
+      0 1px 2px 0 oklch(0 0 0 / 35%),
+      0 8px 24px -12px oklch(0 0 0 / 55%);
   }
 }
