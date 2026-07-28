@@ -23,7 +23,7 @@ export function TabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-border bg-background/75 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+    <nav className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-[oklch(0.19_0.05_273_/_0.72)] pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl">
       <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href);

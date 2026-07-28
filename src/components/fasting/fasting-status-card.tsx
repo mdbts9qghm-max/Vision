@@ -78,10 +78,10 @@ export function FastingStatusCard({
       <div className="flex items-center gap-3">
         <span
           className={cn(
-            "flex size-11 shrink-0 items-center justify-center rounded-full transition-colors",
+            "flex size-11 shrink-0 items-center justify-center rounded-2xl transition-colors",
             eating
-              ? "bg-primary/20 text-primary"
-              : "bg-muted text-muted-foreground",
+              ? "bg-primary text-primary-foreground shadow-[0_8px_20px_-8px_var(--primary)]"
+              : "bg-white/10 text-muted-foreground",
           )}
           aria-hidden
         >
