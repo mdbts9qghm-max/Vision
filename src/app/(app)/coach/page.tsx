@@ -6,6 +6,7 @@ import { loadCoachPage } from "@/server/queries/coach";
 import { regeneratePlan, restartProgram } from "@/server/actions/coach";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import { Ring } from "@/components/ui/ring";
 import { CoachCalendar, type CalDay } from "@/components/coach/coach-calendar";
 import { RoadToUltra } from "@/components/coach/road-to-ultra";
@@ -225,14 +226,14 @@ export default async function CoachPage() {
       <section className="space-y-4 border-t border-border pt-6">
         <h2 className="text-lg font-semibold">Logbuch</h2>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Training loggen</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <WorkoutForm />
-          </CardContent>
-        </Card>
+        {/* Das Formular ist der seltene Fall — es liegt hinter dem +. */}
+        <CollapsibleCard
+          toggle="plus"
+          title="Training loggen"
+          subtitle="Lauf, Kraft oder Mobility frei eintragen"
+        >
+          <WorkoutForm />
+        </CollapsibleCard>
 
         {recentWorkouts.length > 0 ? (
           <WorkoutList workouts={recentWorkouts} />

@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,6 +11,7 @@ export function CollapsibleCard({
   icon,
   subtitle,
   defaultOpen = false,
+  toggle = "chevron",
   children,
   className,
 }: {
@@ -18,6 +19,11 @@ export function CollapsibleCard({
   icon?: React.ReactNode;
   subtitle?: React.ReactNode;
   defaultOpen?: boolean;
+  /**
+   * "chevron" = aufklappen/zuklappen (Standard).
+   * "plus" = etwas hinzufügen — der Knopf kippt beim Öffnen zum ×.
+   */
+  toggle?: "chevron" | "plus";
   children: React.ReactNode;
   className?: string;
 }) {
@@ -45,10 +51,19 @@ export function CollapsibleCard({
             </span>
           ) : null}
         </span>
-        <ChevronDown
-          className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
-          aria-hidden
-        />
+        {toggle === "plus" ? (
+          <span
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_20px_-8px_var(--primary)] transition-transform duration-200 group-open:rotate-45"
+            aria-hidden
+          >
+            <Plus className="size-5" />
+          </span>
+        ) : (
+          <ChevronDown
+            className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+            aria-hidden
+          />
+        )}
       </summary>
       <div className="px-6 pb-6">{children}</div>
     </details>
