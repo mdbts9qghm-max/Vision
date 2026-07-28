@@ -1,6 +1,5 @@
-import { formatMin, type FastingDay } from "@/domain/fasting";
+import { formatDuration, formatMin, type FastingDay } from "@/domain/fasting";
 import { formatDayShort } from "@/domain/dates";
-import { SHIFT_TYPE_LABEL } from "@/lib/labels";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShiftSelect } from "@/components/coach/shift-select";
 import { cn } from "@/lib/utils";
@@ -24,43 +23,49 @@ export function FastingWeek({
           <div
             key={d.date}
             className={cn(
-              "flex items-center gap-3 px-4 py-3",
+              "space-y-1.5 px-4 py-3",
               d.date === today && "bg-primary/5",
             )}
           >
-            <div className="w-[4.5rem] shrink-0">
+            {/* Zeile 1: Tag + Schichtauswahl */}
+            <div className="flex items-center gap-3">
               <p
                 className={cn(
-                  "whitespace-nowrap text-sm font-medium",
+                  "min-w-0 flex-1 whitespace-nowrap text-sm font-medium",
                   d.date === today && "text-primary",
                 )}
               >
                 {formatDayShort(d.date)}
-              </p>
-              {d.source === "rotation" ? (
-                <p className="text-[10px] text-muted-foreground">Rotation</p>
-              ) : null}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              {d.window ? (
-                <p className="whitespace-nowrap text-sm tabular-nums">
-                  {formatMin(d.window.startMin)}–{formatMin(d.window.endMin)}
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    ({d.window.hours} h)
+                {d.source === "rotation" ? (
+                  <span className="ml-2 text-[10px] font-normal text-muted-foreground">
+                    Rotation
                   </span>
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {d.shift ? "kein Fasten" : "keine Schicht"}
-                </p>
-              )}
-              <p className="truncate text-xs text-muted-foreground">
-                {d.shift ? SHIFT_TYPE_LABEL[d.shift] : "offen"}
+                ) : null}
               </p>
+              <ShiftSelect date={d.date} value={d.shift} />
             </div>
 
-            <ShiftSelect date={d.date} value={d.shift} />
+            {/* Zeile 2: Fenster + anschließendes Fasten */}
+            <p className="text-xs text-muted-foreground">
+              {d.window ? (
+                <>
+                  <span className="tabular-nums text-foreground">
+                    {formatMin(d.window.startMin)}–{formatMin(d.window.endMin)}
+                  </span>{" "}
+                  ({d.window.hours} h Fenster)
+                </>
+              ) : (
+                <>{d.shift ? "kein Fastenfenster" : "keine Schicht"}</>
+              )}
+              {d.fast ? (
+                <>
+                  {" · "}
+                  <span className={d.fast.short ? "text-amber-500" : undefined}>
+                    danach {formatDuration(d.fast.minutes)} Fasten
+                  </span>
+                </>
+              ) : null}
+            </p>
           </div>
         ))}
       </CardContent>

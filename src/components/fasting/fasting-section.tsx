@@ -82,6 +82,13 @@ export function FastingSection({
             Rechts je Tag die Schicht ändern — ein manuell gesetzter Tag (z. B.
             V-Schicht) gewinnt immer über die Rotation.
           </p>
+          <p className="px-1 text-xs text-muted-foreground">
+            <span className="text-amber-500">Gelb markiert</span> = Übergangstag
+            mit unter 16 h Fasten. Das passiert, wenn das Fenster am Folgetag
+            früher öffnet (z. B. Schlaftag → Frei) — bei rotierenden Schichten
+            rechnerisch unvermeidbar. Genau dafür gilt: ein unperfekter
+            Übergangstag ruiniert nichts.
+          </p>
         </div>
       </CollapsibleCard>
 

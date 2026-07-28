@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  FAST_TARGET_MIN,
+  SHIFT_ROTATION,
+  WINDOW_MAX_MIN,
   effectiveShift,
+  fastBetween,
   fastingPlan,
   fastingStatus,
   formatDuration,
@@ -140,6 +144,66 @@ describe("fastingStatus", () => {
     const s = fastingStatus(null, hm(12));
     expect(s.state).toBe("none");
     expect(s.minutesUntilChange).toBeNull();
+  });
+});
+
+describe("16/8 — Fensterlänge und Fastenlänge", () => {
+  it("kein Fenster ist länger als 8 h", () => {
+    for (const shift of ["day", "night", "sleep", "free", "v", "vacation"] as const) {
+      const w = windowForShift(shift);
+      expect(w).not.toBeNull();
+      expect(w!.endMin - w!.startMin).toBeLessThanOrEqual(WINDOW_MAX_MIN);
+      expect(w!.endMin).toBeGreaterThan(w!.startMin);
+    }
+  });
+
+  it("Schlaftag ist bewusst kürzer (wach erst ab 14 Uhr, früh ins Bett)", () => {
+    const w = windowForShift("sleep")!;
+    expect(w.hours).toBe(7);
+  });
+
+  it("fastBetween rechnet über Mitternacht korrekt", () => {
+    // Fenster heute bis 17:00, morgen ab 09:00 -> 7 h + 9 h = 16 h
+    const f = fastBetween(windowForShift("day"), windowForShift("free"))!;
+    expect(f.minutes).toBe(FAST_TARGET_MIN);
+    expect(f.short).toBe(false);
+    expect(f.deltaMin).toBe(0);
+  });
+
+  it("hält 16 h ein, wenn morgen nicht früher geöffnet wird", () => {
+    // Tag (ab 09:00) -> Nacht (ab 11:00): später -> längeres Fasten
+    const f = fastBetween(windowForShift("day"), windowForShift("night"))!;
+    expect(f.minutes).toBeGreaterThanOrEqual(FAST_TARGET_MIN);
+    expect(f.minutes).toBe(18 * 60);
+  });
+
+  it("weist den kürzeren Übergang Schlaftag -> Frei aus", () => {
+    // Rechnerisch unvermeidbar: irgendwann rutscht das Fenster wieder nach vorn.
+    const f = fastBetween(windowForShift("sleep"), windowForShift("free"))!;
+    expect(f.short).toBe(true);
+    expect(f.minutes).toBe(12 * 60);
+    expect(f.deltaMin).toBe(-4 * 60);
+  });
+
+  it("Standard-Rotation: genau ein Übergang unter 16 h", () => {
+    const rot = SHIFT_ROTATION;
+    const fasts = rot.map((shift, i) =>
+      fastBetween(
+        windowForShift(shift),
+        windowForShift(rot[(i + 1) % rot.length]),
+      )!,
+    );
+    expect(fasts.filter((f) => f.short)).toHaveLength(1);
+
+    // Über den Zyklus gilt exakt: Fasten + Fenster = 24 h pro Tag. Im Schnitt
+    // also mindestens 16 h Fasten, weil kein Fenster länger als 8 h ist.
+    const totalFast = fasts.reduce((a, f) => a + f.minutes, 0);
+    const totalWindow = rot.reduce(
+      (a, s) => a + (windowForShift(s)!.endMin - windowForShift(s)!.startMin),
+      0,
+    );
+    expect(totalFast + totalWindow).toBe(rot.length * 1440);
+    expect(totalFast / rot.length).toBeGreaterThanOrEqual(FAST_TARGET_MIN);
   });
 });
 

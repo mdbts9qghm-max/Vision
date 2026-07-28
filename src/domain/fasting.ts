@@ -30,7 +30,9 @@ export const FASTING_WINDOWS: Record<
   // tagsüber essen, nach dem Vorschlaf die kräftige Mahlzeit vor Schichtbeginn,
   // danach durch die Nacht fasten.
   night: { startMin: hm(11), endMin: hm(19) },
-  // Schlaftag (Tagschlaf 08:00–14:00)
+  // Schlaftag (Tagschlaf 08:00–14:00): bewusst nur 7 h — du bist erst ab
+  // 14 Uhr wach und gehst früh (~22 Uhr) ins Bett, das Fenster soll ~2–3 h
+  // vor dem Schlafen schließen. Ein volles 8-h-Fenster ginge nur bis 22 Uhr.
   sleep: { startMin: hm(14), endMin: hm(21) },
   // Freischicht
   free: { startMin: hm(9), endMin: hm(17) },
@@ -77,6 +79,12 @@ export const FASTING_TIPS = {
 // ═══════════════════════════════════════════════════════════════════════════
 //  LOGIK
 // ═══════════════════════════════════════════════════════════════════════════
+
+/** Ziel-Fastenlänge zwischen zwei Fenstern (16 h bei 16/8). */
+export const FAST_TARGET_MIN = 16 * 60;
+
+/** Maximale Fensterlänge (die „8" in 16/8). */
+export const WINDOW_MAX_MIN = 8 * 60;
 
 export interface EatingWindow {
   startMin: number;
@@ -211,23 +219,60 @@ export function fastingStatus(
   };
 }
 
+export interface FastBridge {
+  /** Fastenlänge vom Fensterschluss heute bis zur Öffnung morgen (Minuten). */
+  minutes: number;
+  /** Abweichung vom 16-h-Ziel (negativ = kürzer als 16 h). */
+  deltaMin: number;
+  /** Kürzer als 16 h — Übergangstag, an dem das Fenster nach vorn rutscht. */
+  short: boolean;
+}
+
+/**
+ * Fastenlänge zwischen dem Fenster von heute und dem von morgen.
+ *
+ * Rechnerisch gilt: Fasten = 16 h + (Start morgen − Start heute) bei 8-h-
+ * Fenstern. Die 16 h werden also genau dann eingehalten, wenn das Fenster
+ * morgen nicht früher öffnet als heute. In einer wiederkehrenden Rotation
+ * muss es deshalb pro Zyklus mindestens einen kürzeren Übergang geben — der
+ * wird hier ausgewiesen statt versteckt.
+ */
+export function fastBetween(
+  today: EatingWindow | null,
+  tomorrow: EatingWindow | null,
+): FastBridge | null {
+  if (!today || !tomorrow) return null;
+  const minutes = 1440 - today.endMin + tomorrow.startMin;
+  const deltaMin = minutes - FAST_TARGET_MIN;
+  return { minutes, deltaMin, short: minutes < FAST_TARGET_MIN };
+}
+
 export interface FastingDay {
   date: string;
   shift: ShiftType | undefined;
   source: "manual" | "rotation" | "none";
   window: EatingWindow | null;
+  /** Fasten bis zur Öffnung am Folgetag (null am letzten Tag der Liste). */
+  fast: FastBridge | null;
 }
 
-/** Tagesplan für `days` Tage ab `from` (für die Wochenübersicht). */
+/**
+ * Tagesplan für `days` Tage ab `from` (für die Wochenübersicht). Jeder Tag
+ * kennt zusätzlich das Fasten bis zur Öffnung am Folgetag.
+ */
 export function fastingPlan(
   from: string,
   days: number,
   manualShifts: Record<string, ShiftType | undefined>,
   rotationStart: string | null | undefined,
 ): FastingDay[] {
-  return Array.from({ length: days }, (_, i) => {
+  const base = Array.from({ length: days }, (_, i) => {
     const date = addDaysISO(from, i);
     const { shift, source } = effectiveShift(date, manualShifts, rotationStart);
     return { date, shift, source, window: windowForShift(shift) };
   });
+  return base.map((d, i) => ({
+    ...d,
+    fast: fastBetween(d.window, base[i + 1]?.window ?? null),
+  }));
 }

@@ -3,19 +3,13 @@ import Link from "next/link";
 import { Moon } from "lucide-react";
 import { loadSleepPage } from "@/server/queries/sleep";
 import { sleepPlan, tomorrowPrep } from "@/domain/sleep";
-import { nutritionPlan } from "@/domain/nutrition";
 import { formatLongDate, todayISO } from "@/domain/dates";
 import { RECOVERY_RED_BELOW } from "@/domain/readiness";
-import {
-  SESSION_KIND_LABEL,
-  SHIFT_TIME_LABEL,
-  SHIFT_TYPE_LABEL,
-} from "@/lib/labels";
+import { SHIFT_TIME_LABEL, SHIFT_TYPE_LABEL } from "@/lib/labels";
 import { Card, CardContent } from "@/components/ui/card";
 import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import { Ring } from "@/components/ui/ring";
 import { DayTimeline } from "@/components/sleep/day-timeline";
-import { NutritionCard } from "@/components/sleep/nutrition-card";
 import { FastingSection } from "@/components/fasting/fasting-section";
 import { fastingPlan } from "@/domain/fasting";
 
@@ -57,8 +51,6 @@ export default async function SleepPage() {
     shiftTomorrow,
     sleepHours,
     recoveryPct,
-    session,
-    weightKg,
     shiftMap,
     rotationStart,
   } = await loadSleepPage(today, FASTING_DAYS + 1);
@@ -68,16 +60,6 @@ export default async function SleepPage() {
 
   const firstNight = shiftToday === "night" && shiftYesterday !== "night";
   const plan = shiftToday ? sleepPlan(shiftToday, { firstNight }) : undefined;
-  const fuel = shiftToday
-    ? nutritionPlan({
-        shift: shiftToday,
-        kind: session?.kind,
-        targetKm: session?.targetKm,
-        targetMin: session?.targetMin,
-        weightKg,
-        firstNight,
-      })
-    : undefined;
   const tomorrowFirstNight = shiftTomorrow === "night" && shiftToday !== "night";
   const tomorrowPlan = shiftTomorrow
     ? sleepPlan(shiftTomorrow, { firstNight: tomorrowFirstNight })
@@ -180,13 +162,6 @@ export default async function SleepPage() {
             />
           </div>
         </CollapsibleCard>
-      ) : null}
-
-      {fuel ? (
-        <NutritionCard
-          plan={fuel}
-          sessionLabel={session ? SESSION_KIND_LABEL[session.kind] : undefined}
-        />
       ) : null}
 
       <FastingSection
