@@ -82,7 +82,7 @@ export default async function GoalDetailPage({
             className="h-2 overflow-hidden rounded-full bg-muted"
           >
             <div
-              className="h-full rounded-full bg-primary transition-[width] duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_10px_-2px_var(--primary)] transition-[width] duration-500"
               style={{ width: `${progress.ratio * 100}%` }}
             />
           </div>

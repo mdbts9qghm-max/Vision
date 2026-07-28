@@ -36,7 +36,7 @@ export function ActiveGoalCard({
               <div className="mt-1.5 flex items-center gap-2">
                 <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary"
+                    className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_10px_-2px_var(--primary)]"
                     style={{ width: `${progress.ratio * 100}%` }}
                   />
                 </div>

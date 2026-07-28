@@ -121,7 +121,7 @@ export function FastingStatusCard({
         <div className="space-y-1.5">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-primary transition-[width] duration-700"
+              className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary shadow-[0_0_10px_-2px_var(--primary)] transition-[width] duration-700"
               style={{ width: `${Math.round(progress * 100)}%` }}
             />
           </div>

@@ -32,7 +32,18 @@ export function HabitWeeksChart({ history }: { history: WeekHistoryEntry[] }) {
           margin={{ top: 12, right: 8, bottom: 0, left: -24 }}
           barCategoryGap="25%"
         >
-          <CartesianGrid stroke="var(--border)" vertical={false} />
+          {/* Balken-Verlauf von oben (voll) nach unten — Look der Vorlage. */}
+          <defs>
+            <linearGradient id="habitBar" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--primary)" stopOpacity={1} />
+              <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.35} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid
+            stroke="var(--border)"
+            strokeDasharray="0"
+            vertical={false}
+          />
           <XAxis
             dataKey="label"
             tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
@@ -90,15 +101,17 @@ export function HabitWeeksChart({ history }: { history: WeekHistoryEntry[] }) {
                 payload: WeekHistoryEntry;
               };
               if (height <= 0) return <g />;
+              // Balken auf max. 24 px begrenzen, Rest bleibt Luft.
+              const w = Math.min(width, 24);
               return (
                 <rect
-                  x={x}
+                  x={x + (width - w) / 2}
                   y={y}
-                  width={width}
+                  width={w}
                   height={height}
                   rx={4}
                   ry={4}
-                  fill="var(--primary)"
+                  fill="url(#habitBar)"
                   fillOpacity={payload.isCurrent ? 0.45 : 1}
                 />
               );

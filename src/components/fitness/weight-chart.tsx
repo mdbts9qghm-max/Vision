@@ -1,9 +1,10 @@
 "use client";
 
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -66,11 +67,23 @@ export function WeightChart({
 
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
+          <ComposedChart
             data={data}
             margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
           >
-            <CartesianGrid stroke="var(--border)" vertical={false} />
+            {/* Weicher Verlauf unter der Trendlinie — Look der Vorlage. */}
+            <defs>
+              <linearGradient id="weightFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            {/* Hairline, solide — Gitter bleibt zurückhaltend. */}
+            <CartesianGrid
+              stroke="var(--border)"
+              strokeDasharray="0"
+              vertical={false}
+            />
             <XAxis
               dataKey="date"
               tickFormatter={shortDate}
@@ -116,16 +129,19 @@ export function WeightChart({
               activeDot={{ r: 4, fill: "var(--primary)" }}
               isAnimationActive={false}
             />
-            <Line
+            <Area
               type="monotone"
               dataKey="trend"
               stroke="var(--primary)"
               strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="url(#weightFill)"
               dot={false}
               activeDot={false}
               isAnimationActive={false}
             />
-          </LineChart>
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
     </div>

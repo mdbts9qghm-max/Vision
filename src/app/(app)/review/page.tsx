@@ -132,7 +132,7 @@ export default async function ReviewPage({
               );
               return (
                 <div key={f.key} className="flex items-center gap-2 text-sm">
-                  <span className="w-16 shrink-0 text-muted-foreground">
+                  <span className="w-20 shrink-0 text-muted-foreground">
                     {f.label}
                   </span>
                   {val !== null ? (
@@ -224,10 +224,13 @@ export default async function ReviewPage({
                   key={t.weekStart}
                   className="flex flex-1 flex-col items-center gap-1"
                 >
-                  <div className="flex h-24 w-full items-end">
+                  <div className="flex h-24 w-full items-end justify-center">
+                    {/* Balken: max. 24 px, 4 px runde Kappe, Verlauf nach unten. */}
                     <div
-                      className={`w-full rounded-t ${
-                        t.weekStart === selected ? "bg-primary" : "bg-primary/40"
+                      className={`w-full max-w-6 rounded-t bg-gradient-to-b ${
+                        t.weekStart === selected
+                          ? "from-primary to-primary/40 shadow-[0_0_12px_-3px_var(--primary)]"
+                          : "from-primary/60 to-primary/15"
                       }`}
                       style={{
                         height: `${
