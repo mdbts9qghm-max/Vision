@@ -131,7 +131,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <header className="space-y-2 relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-primary/45 via-primary/15 to-transparent px-4 py-5 shadow-[0_14px_40px_-18px_oklch(0.55_0.23_262_/_0.85)] backdrop-blur-xl">
+      <header className="space-y-2 relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/20 via-primary/6 to-transparent px-4 py-5 shadow-[0_12px_36px_-20px_var(--primary)] backdrop-blur-xl">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">

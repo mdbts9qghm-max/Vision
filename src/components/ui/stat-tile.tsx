@@ -45,7 +45,7 @@ export function StatTile({
                   ? "text-muted-foreground"
                   : deltaGood
                     ? "text-emerald-400"
-                    : "text-amber-400",
+                    : "text-orange-400",
               )}
             >
               {delta}

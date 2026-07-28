@@ -33,9 +33,10 @@
 }
 
 /*
- * Look „Vision UI": tiefes Navy als Grundfläche, elektrisches Blau (≈ #0075ff)
- * als Akzent, Karten als Glas mit heller Kante. Dunkles Theme ist Default
- * (html.dark in layout.tsx).
+ * Schwarz + Neon-Gelbgrün (≈ #c8f52e) als einzige Akzentfarbe. Weil der Akzent
+ * sehr hell ist, steht darauf immer dunkler Text (--primary-foreground).
+ * Karten bleiben Glas mit heller Kante (Look der Vorlage), nur eben auf
+ * Schwarz statt Navy. Dunkles Theme ist Default (html.dark in layout.tsx).
  */
 :root {
   --radius: 1rem;
@@ -45,8 +46,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.57 0.216 259);
-  --primary-foreground: oklch(0.99 0 0);
+  --primary: oklch(0.82 0.2 124);
+  --primary-foreground: oklch(0.18 0.03 140);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -56,28 +57,28 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.57 0.216 259);
+  --ring: oklch(0.82 0.2 124);
 }
 
 .dark {
-  --background: oklch(0.168 0.052 274);
-  --foreground: oklch(0.985 0.004 260);
-  --card: oklch(0.229 0.049 273);
-  --card-foreground: oklch(0.985 0.004 260);
-  --popover: oklch(0.229 0.049 273);
-  --popover-foreground: oklch(0.985 0.004 260);
-  --primary: oklch(0.62 0.208 258);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.285 0.045 273);
-  --secondary-foreground: oklch(0.985 0.004 260);
-  --muted: oklch(0.285 0.045 273);
-  --muted-foreground: oklch(0.735 0.035 268);
-  --accent: oklch(0.31 0.05 271);
-  --accent-foreground: oklch(0.985 0.004 260);
-  --destructive: oklch(0.68 0.2 20);
-  --border: oklch(1 0 0 / 14%);
-  --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.62 0.208 258);
+  --background: oklch(0.135 0.008 152);
+  --foreground: oklch(0.985 0.002 150);
+  --card: oklch(0.205 0.012 152);
+  --card-foreground: oklch(0.985 0.002 150);
+  --popover: oklch(0.205 0.012 152);
+  --popover-foreground: oklch(0.985 0.002 150);
+  --primary: oklch(0.87 0.21 124);
+  --primary-foreground: oklch(0.18 0.03 140);
+  --secondary: oklch(0.27 0.014 152);
+  --secondary-foreground: oklch(0.985 0.002 150);
+  --muted: oklch(0.27 0.014 152);
+  --muted-foreground: oklch(0.72 0.017 155);
+  --accent: oklch(0.29 0.016 155);
+  --accent-foreground: oklch(0.985 0.002 150);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.87 0.21 124);
 }
 
 @layer base {
@@ -87,23 +88,24 @@
   body {
     @apply bg-background text-foreground;
     /*
-     * Farbraum hinter dem Navy: kräftiges Blau oben, violetter Schimmer an den
-     * Rändern — die Karten liegen als Glas darüber.
+     * Lichtschein hinter dem Schwarz: gelbgrün oben, tieferes Grün an den
+     * Rändern. Bewusst schwach — Neon auf Schwarz kippt sonst ins Grelle und
+     * die Karten verlieren ihre Kante.
      */
     background-image:
       radial-gradient(
         40rem 26rem at 82% -6rem,
-        oklch(0.55 0.23 268 / 0.34),
+        oklch(0.8 0.2 124 / 0.16),
         transparent 66%
       ),
       radial-gradient(
         34rem 24rem at 4% 16%,
-        oklch(0.5 0.2 292 / 0.24),
+        oklch(0.72 0.17 148 / 0.1),
         transparent 64%
       ),
       radial-gradient(
         46rem 30rem at 50% 106%,
-        oklch(0.5 0.22 262 / 0.22),
+        oklch(0.78 0.19 110 / 0.1),
         transparent 68%
       );
     background-attachment: fixed;
@@ -116,24 +118,24 @@
 
 @layer components {
   /*
-   * Glas-Karten: halbtransparentes Navy mit diagonalem Verlauf, heller
+   * Glas-Karten: fast schwarze Fläche mit diagonalem Verlauf, heller
    * 1-px-Kante und Unschärfe dahinter — der Look aus der Vorlage.
    */
   [data-slot="card"] {
     /* Deutlich deckender als reines Glas — sonst schluckt die Ambiente die
-       Fläche und die Karte wirkt grau statt tief navy. */
-    background-color: oklch(0.185 0.048 274 / 0.9);
+       Fläche und die Karte wirkt grau statt schwarz. */
+    background-color: oklch(0.175 0.011 152 / 0.9);
     background-image: linear-gradient(
       127deg,
-      oklch(1 0 0 / 0.08) 0%,
+      oklch(1 0 0 / 0.07) 0%,
       oklch(1 0 0 / 0.015) 46%,
-      oklch(0.62 0.208 258 / 0.08) 100%
+      oklch(0.87 0.21 124 / 0.07) 100%
     );
-    border-color: oklch(1 0 0 / 0.13);
+    border-color: oklch(1 0 0 / 0.12);
     backdrop-filter: blur(24px) saturate(140%);
     -webkit-backdrop-filter: blur(24px) saturate(140%);
     box-shadow:
-      inset 0 1px 0 0 oklch(1 0 0 / 0.1),
-      0 12px 34px -14px oklch(0.1 0.05 270 / 0.9);
+      inset 0 1px 0 0 oklch(1 0 0 / 0.09),
+      0 12px 34px -14px oklch(0.04 0.01 150 / 0.95);
   }
 }
