@@ -115,7 +115,7 @@ export function sleepPlan(
               kind: "training",
               label: "Lockerer Lauf",
             },
-            { startMin: hm(14), endMin: hm(16, 30), kind: "nap", label: "Vorschlaf" },
+            { startMin: hm(15), endMin: hm(17), kind: "nap", label: "Vorschlaf" },
             ...span(hm(19), hm(24), "work", "Schicht"),
           ],
           markers: [
@@ -126,7 +126,7 @@ export function sleepPlan(
           sleepTargetHours: 2.5,
           tips: [
             "Training am freien Vormittag (10–12 Uhr) und ~2 h vor dem Vorschlaf beenden — nicht nach dem Nap.",
-            "Vorschlaf 14–17 Uhr ist Pflicht-Werkzeug: 90-min-Zyklus für echte Erholung.",
+            "Vorschlaf 15–17 Uhr ist Pflicht-Werkzeug: 90-min-Zyklus für echte Erholung.",
             "Hauptmahlzeit vor die Schicht legen; nachts nur leichte, proteinbetonte Snacks.",
             "In der Schicht hell, auf dem Heimweg morgens Sonnenbrille.",
           ],
@@ -328,7 +328,7 @@ export function tomorrowPrep(
       if (opts.firstNight) {
         return [
           "Morgen erste Nachtschicht: Vormittag für einen lockeren Lauf freihalten (~10–12 Uhr).",
-          "Nachmittags-Nap (14–17 Uhr) fest einplanen; Hauptmahlzeit vor die Schicht legen.",
+          "Nachmittags-Nap (15–17 Uhr) fest einplanen; Hauptmahlzeit vor die Schicht legen.",
           "Schlafzimmer für den Tagschlaf danach abdunkeln, Sonnenbrille bereitlegen.",
         ];
       }

@@ -121,7 +121,7 @@ export function shiftFuelTips(
       if (opts.firstNight) {
         return [
           "Hauptmahlzeit VOR die Schicht (~17:30 Uhr) — nicht mitten in der Nacht.",
-          "Vor dem Vorschlaf (ab 14 Uhr) nichts Schweres essen.",
+          "Vor dem Vorschlaf (ab ~15 Uhr) nichts Schweres mehr essen.",
           "Nachts nur leichte, proteinbetonte Snacks (Quark, Nüsse, Skyr).",
           "Koffein zum Schichtstart, letzte Dosis bis ~00:30.",
         ];

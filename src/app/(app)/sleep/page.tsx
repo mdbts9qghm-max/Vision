@@ -15,8 +15,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
 import { DayTimeline } from "@/components/sleep/day-timeline";
 import { NutritionCard } from "@/components/sleep/nutrition-card";
+import { FastingSection } from "@/components/fasting/fasting-section";
+import { fastingPlan } from "@/domain/fasting";
 
 export const metadata: Metadata = { title: "Schlaf — Vision" };
+
+/** Tage in der Fasten-Übersicht. */
+const FASTING_DAYS = 14;
 
 function recoveryTone(pct: number): { label: string; className: string } {
   if (pct < RECOVERY_RED_BELOW)
@@ -53,7 +58,12 @@ export default async function SleepPage() {
     recoveryPct,
     session,
     weightKg,
-  } = await loadSleepPage(today);
+    shiftMap,
+    rotationStart,
+  } = await loadSleepPage(today, FASTING_DAYS + 1);
+
+  // Schicht-Fasten: manuell eingetragene Tage gewinnen über die Rotation.
+  const fasting = fastingPlan(today, FASTING_DAYS + 1, shiftMap, rotationStart);
 
   const firstNight = shiftToday === "night" && shiftYesterday !== "night";
   const plan = shiftToday ? sleepPlan(shiftToday, { firstNight }) : undefined;
@@ -180,6 +190,13 @@ export default async function SleepPage() {
           sessionLabel={session ? SESSION_KIND_LABEL[session.kind] : undefined}
         />
       ) : null}
+
+      <FastingSection
+        plan={fasting}
+        today={today}
+        rotationStart={rotationStart}
+        days={FASTING_DAYS}
+      />
 
       {tomorrowPlan && shiftTomorrow ? (
         <Card>

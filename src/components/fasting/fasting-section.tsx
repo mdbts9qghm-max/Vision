@@ -1,18 +1,11 @@
-import type { Metadata } from "next";
 import { CalendarRange, Info, Lightbulb, Timer } from "lucide-react";
-import { loadFasting } from "@/server/queries/fasting";
-import { FASTING_TIPS, fastingPlan } from "@/domain/fasting";
-import { formatLongDate, todayISO } from "@/domain/dates";
+import { FASTING_TIPS, type FastingDay } from "@/domain/fasting";
 import { SHIFT_TYPE_LABEL } from "@/lib/labels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionLabel } from "@/components/dashboard/section-label";
 import { FastingStatusCard } from "@/components/fasting/fasting-status-card";
 import { FastingWeek } from "@/components/fasting/fasting-week";
 import { RotationForm } from "@/components/fasting/rotation-form";
-
-export const metadata: Metadata = { title: "Fasten — Vision" };
-
-const DAYS = 14;
 
 function TipList({ items }: { items: readonly string[] }) {
   return (
@@ -27,63 +20,71 @@ function TipList({ items }: { items: readonly string[] }) {
   );
 }
 
-export default async function FastingPage() {
-  const today = todayISO();
-  const { rotationStart, manualShifts } = await loadFasting(today, DAYS + 1);
-  const plan = fastingPlan(today, DAYS + 1, manualShifts, rotationStart);
-
+/**
+ * Kompletter Schicht-Fasten-Block (16/8): Live-Status, Tagesübersicht,
+ * Rotation, Fenster je Schicht und Hinweise. Sitzt im Schlaf-Tab, weil Fasten
+ * und Schlafrhythmus zusammengehören.
+ */
+export function FastingSection({
+  plan,
+  today,
+  rotationStart,
+  days,
+}: {
+  /** Tagesplan ab heute — braucht mindestens `days + 1` Einträge. */
+  plan: FastingDay[];
+  today: string;
+  rotationStart: string | null;
+  /** Wie viele Tage in der Übersicht gezeigt werden. */
+  days: number;
+}) {
   const todayEntry = plan[0];
   const tomorrowEntry = plan[1];
-  // Tage, die nur aus der Rotation kommen (noch nicht im Schichtplan stehen).
   const pendingRotationDays = plan
-    .slice(0, DAYS)
+    .slice(0, days)
     .filter((d) => d.source === "rotation").length;
 
   return (
-    <div className="space-y-5">
-      <header className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/20 via-card to-card px-4 py-5 shadow-[0_10px_36px_-18px_var(--primary)]">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <Timer className="size-6 text-primary" aria-hidden />
-          Schicht-Fasten
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          16/8 nach Schicht · {formatLongDate(today)}
+    <section className="space-y-4 border-t border-border pt-6">
+      <div className="space-y-1">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <Timer className="size-5 text-primary" aria-hidden />
+          Schicht-Fasten (16/8)
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Essensfenster passend zur Schicht — Fenster ~1–2 h nach dem Aufstehen
+          öffnen, ~2–3 h vor dem Schlafen schließen.
         </p>
-      </header>
+      </div>
 
-      {/* Heute — Live-Status */}
-      <section className="space-y-2">
-        <SectionLabel icon={<Timer className="size-3.5" aria-hidden />}>
-          Heute
-        </SectionLabel>
-        <FastingStatusCard
-          shift={todayEntry.shift}
-          window={todayEntry.window}
-          nextDayStartMin={tomorrowEntry.window?.startMin ?? null}
-          href={null}
-        />
-        {todayEntry.shift === undefined ? (
-          <p className="px-1 text-xs text-muted-foreground">
-            Für heute ist keine Schicht bekannt — unten ein Rotations-Startdatum
-            setzen oder den Tag direkt überschreiben.
-          </p>
-        ) : null}
-      </section>
+      {/* Live-Status */}
+      <FastingStatusCard
+        shift={todayEntry?.shift}
+        window={todayEntry?.window ?? null}
+        nextDayStartMin={tomorrowEntry?.window?.startMin ?? null}
+        href={null}
+      />
+      {todayEntry && todayEntry.shift === undefined ? (
+        <p className="px-1 text-xs text-muted-foreground">
+          Für heute ist keine Schicht bekannt — unten ein Rotations-Startdatum
+          setzen oder den Tag direkt überschreiben.
+        </p>
+      ) : null}
 
-      {/* Wochenübersicht */}
-      <section className="space-y-2">
+      {/* Tagesübersicht */}
+      <div className="space-y-2">
         <SectionLabel icon={<CalendarRange className="size-3.5" aria-hidden />}>
-          Nächste {DAYS} Tage
+          Nächste {days} Tage
         </SectionLabel>
-        <FastingWeek days={plan.slice(0, DAYS)} today={today} />
+        <FastingWeek days={plan.slice(0, days)} today={today} />
         <p className="px-1 text-xs text-muted-foreground">
           Rechts je Tag die Schicht ändern — ein manuell gesetzter Tag (z. B.
           V-Schicht) gewinnt immer über die Rotation.
         </p>
-      </section>
+      </div>
 
       {/* Rotation */}
-      <section className="space-y-2">
+      <div className="space-y-2">
         <SectionLabel icon={<CalendarRange className="size-3.5" aria-hidden />}>
           Rotation
         </SectionLabel>
@@ -94,16 +95,16 @@ export default async function FastingPage() {
                 <span className="font-medium text-foreground">
                   {pendingRotationDays} Tage kommen aktuell nur aus der Rotation.
                 </span>{" "}
-                Fürs Fasten reicht das. Damit auch Coach und Schlaf-Tab sie
+                Fürs Fasten reicht das. Damit auch Coach und Tagesplan sie
                 nutzen, unten in den Schichtplan übernehmen.
               </p>
             ) : null}
             <RotationForm initialStart={rotationStart} />
           </CardContent>
         </Card>
-      </section>
+      </div>
 
-      {/* Fenster-Übersicht je Schicht */}
+      {/* Fenster je Schicht */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Fenster je Schicht</CardTitle>
@@ -112,7 +113,7 @@ export default async function FastingPage() {
           {(
             [
               ["day", "07:00–19:00 Arbeit", "09:00–17:00"],
-              ["night", "19:00–07:00 Arbeit", "14:00–22:00"],
+              ["night", "19:00–07:00 Arbeit, Vorschlaf 15–17", "11:00–19:00"],
               ["sleep", "08:00–14:00 Schlaf", "14:00–21:00"],
               ["free", "frei", "09:00–17:00"],
               ["v", "08:00–20:00 Arbeit", "10:00–18:00"],
@@ -123,7 +124,9 @@ export default async function FastingPage() {
                 <span className="font-medium">{SHIFT_TYPE_LABEL[shift]}</span>{" "}
                 <span className="text-xs text-muted-foreground">({work})</span>
               </span>
-              <span className="shrink-0 tabular-nums text-primary">{win}</span>
+              <span className="shrink-0 whitespace-nowrap tabular-nums text-primary">
+                {win}
+              </span>
             </div>
           ))}
         </CardContent>
@@ -160,10 +163,10 @@ export default async function FastingPage() {
         </CardContent>
       </Card>
 
-      <p className="flex items-start gap-2 px-1 pb-2 text-xs text-muted-foreground">
+      <p className="flex items-start gap-2 px-1 text-xs text-muted-foreground">
         <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
         {FASTING_TIPS.disclaimer}
       </p>
-    </div>
+    </section>
   );
 }

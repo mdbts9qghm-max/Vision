@@ -31,9 +31,10 @@ describe("windowForShift", () => {
       endMin: hm(17),
       hours: 8,
     });
+    // Nachtschicht: tagsüber essen, Fenster schließt zum Schichtstart.
     expect(windowForShift("night")).toMatchObject({
-      startMin: hm(14),
-      endMin: hm(22),
+      startMin: hm(11),
+      endMin: hm(19),
     });
     expect(windowForShift("sleep")).toMatchObject({
       startMin: hm(14),

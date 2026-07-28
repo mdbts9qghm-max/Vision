@@ -26,8 +26,10 @@ export const FASTING_WINDOWS: Record<
 > = {
   // Tagschicht (Arbeit 07:00–19:00)
   day: { startMin: hm(9), endMin: hm(17) },
-  // Nachtschicht (Arbeit 19:00–07:00)
-  night: { startMin: hm(14), endMin: hm(22) },
+  // Nachtschicht (Arbeit 19:00–07:00, Vorschlaf 15:00–17:00):
+  // tagsüber essen, nach dem Vorschlaf die kräftige Mahlzeit vor Schichtbeginn,
+  // danach durch die Nacht fasten.
+  night: { startMin: hm(11), endMin: hm(19) },
   // Schlaftag (Tagschlaf 08:00–14:00)
   sleep: { startMin: hm(14), endMin: hm(21) },
   // Freischicht

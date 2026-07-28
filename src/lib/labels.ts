@@ -87,7 +87,7 @@ export const SHIFT_TIME_LABEL: Record<
   string
 > = {
   day: "07:00–19:00",
-  night: "19:00–07:00 · Vorschlaf ~14–17 Uhr",
+  night: "19:00–07:00 · Vorschlaf ~15–17 Uhr",
   sleep: "Schlaf bis ~14:00, danach frei",
   free: "ganzer Tag frei",
   v: "≈08:00–20:00 (variabel)",

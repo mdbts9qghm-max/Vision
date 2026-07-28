@@ -39,7 +39,7 @@ export async function setRotationStart(input: {
     .values({ id: "singleton", ...row })
     .onConflictDoUpdate({ target: fastingSettings.id, set: row });
 
-  revalidatePath("/fasting");
+  revalidatePath("/sleep");
   revalidatePath("/dashboard");
   return {};
 }
@@ -82,6 +82,6 @@ export async function applyRotationToShifts(
   // Der Coach plant nur Tage mit bekannter Schicht — jetzt neu rechnen.
   await regeneratePlan();
 
-  revalidatePath("/fasting");
+  revalidatePath("/sleep");
   return { applied: inserted.length };
 }

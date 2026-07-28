@@ -21,7 +21,7 @@ export const HABIT_LIBRARY: HabitPreset[] = [
   {
     key: "nap-before-night",
     name: "Nap vor Nachtschicht",
-    cue: "Vor der Nachtschicht 14–17 Uhr hinlegen",
+    cue: "Vor der Nachtschicht 15–17 Uhr hinlegen",
     category: "sleep",
     recurrence: { type: "daily", shiftTypes: ["night"] },
   },

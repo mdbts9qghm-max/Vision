@@ -46,12 +46,12 @@ export function FastingStatusCard({
   shift,
   window,
   nextDayStartMin,
-  href = "/fasting",
+  href = "/sleep",
 }: {
   shift?: ShiftType;
   window: EatingWindow | null;
   nextDayStartMin?: number | null;
-  /** Ziel des Tipps — auf der Fasten-Seite selbst weglassen. */
+  /** Ziel beim Antippen — im Schlaf-Tab selbst mit `null` weglassen. */
   href?: string | null;
 }) {
   const min = useSyncExternalStore<number | null>(
