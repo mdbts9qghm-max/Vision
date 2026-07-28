@@ -9,7 +9,10 @@ import {
 } from "@/server/db/schema";
 import { todayISO, weekStartISO, addDaysISO } from "@/domain/dates";
 import type { ShiftType } from "@/domain/coach";
-import type { SeriesPoint } from "@/domain/fitness";
+import { weeklyVolume, type SeriesPoint, type WeeklyVolume } from "@/domain/fitness";
+
+/** Wochen im Volumen-Diagramm. */
+const VOLUME_WEEKS = 8;
 
 export type CoachSettings = typeof coachSettings.$inferSelect;
 export type PlannedSession = typeof plannedSessions.$inferSelect;
@@ -29,6 +32,8 @@ export interface CoachPageData {
   longestRunKm: number;
   /** Gesamte gelaufene Distanz (km). */
   totalRunKm: number;
+  /** Wochenvolumen der letzten Wochen — für das Volumen-Diagramm. */
+  weeklyKm: WeeklyVolume[];
 }
 
 /**
@@ -42,6 +47,7 @@ export async function loadCoachPage(
 ): Promise<CoachPageData> {
   const weekEnd = addDaysISO(currentWeek, 6);
   const chartSince = addDaysISO(today, -89);
+  const volumeSince = addDaysISO(currentWeek, -7 * (VOLUME_WEEKS - 1));
   const [
     settingsRows,
     shiftRows,
@@ -52,6 +58,7 @@ export async function loadCoachPage(
     recentRows,
     windowWorkoutRows,
     runStatsRows,
+    volumeRows,
   ] = await db.batch([
     db.select().from(coachSettings),
     db
@@ -102,6 +109,14 @@ export async function loadCoachPage(
         total: sql<number>`coalesce(sum(${workouts.distanceKm}), 0)`,
       })
       .from(workouts),
+    db
+      .select({
+        date: workouts.date,
+        distanceKm: workouts.distanceKm,
+        type: workouts.type,
+      })
+      .from(workouts)
+      .where(and(gte(workouts.date, volumeSince), lte(workouts.date, weekEnd))),
   ]);
 
   const shiftMap: Record<string, ShiftType> = {};
@@ -122,6 +137,7 @@ export async function loadCoachPage(
     loggedDates: new Set(windowWorkoutRows.map((w) => w.date)),
     longestRunKm: runStatsRows[0]?.longest ?? 0,
     totalRunKm: runStatsRows[0]?.total ?? 0,
+    weeklyKm: weeklyVolume(volumeRows, today, VOLUME_WEEKS),
   };
 }
 

@@ -10,6 +10,7 @@ import { Ring } from "@/components/ui/ring";
 import { CoachCalendar, type CalDay } from "@/components/coach/coach-calendar";
 import { RoadToUltra } from "@/components/coach/road-to-ultra";
 import { WeightChart } from "@/components/fitness/weight-chart-lazy";
+import { WeeklyKmChart } from "@/components/fitness/weekly-km-chart-lazy";
 import { WorkoutForm } from "@/components/fitness/workout-form";
 import { WorkoutList } from "@/components/fitness/workout-list";
 
@@ -43,8 +44,22 @@ export default async function CoachPage() {
     loggedDates,
     longestRunKm,
     totalRunKm,
+    weeklyKm,
   } = await loadCoachPage(today, horizon, currentWeek);
   const weightTrend = trailingAverage(weightSeries, 7);
+
+  // Kennzahlen zum Volumen-Diagramm: Schnitt der abgeschlossenen Wochen und
+  // der Vergleich der laufenden Woche zur Vorwoche.
+  const doneWeeks = weeklyKm.filter((w) => !w.isCurrent);
+  const avgWeekKm =
+    doneWeeks.length > 0
+      ? Math.round(
+          (doneWeeks.reduce((s, w) => s + w.km, 0) / doneWeeks.length) * 10,
+        ) / 10
+      : 0;
+  const prevWeekKm = doneWeeks.at(-1)?.km ?? 0;
+  const kmDelta = Math.round((weekActuals.km - prevWeekKm) * 10) / 10;
+  const hasVolume = weeklyKm.some((w) => w.km > 0);
 
   const sessionByDate = new Map(plan.map((s) => [s.date, s]));
   const days = Array.from({ length: 14 }, (_, i) => addDaysISO(today, i));
@@ -143,6 +158,47 @@ export default async function CoachPage() {
                 : "Kilometer kommen aus dem Logbuch (Distanz beim Loggen)."}
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Wochenvolumen — die Kernkurve im Ultra-Aufbau */}
+      <Card>
+        <CardHeader className="flex-row flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <CardTitle>Wochenvolumen</CardTitle>
+          {hasVolume ? (
+            <span className="text-sm text-muted-foreground">
+              8 Wochen · Ø {avgWeekKm} km
+            </span>
+          ) : null}
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {hasVolume ? (
+            <>
+              <WeeklyKmChart weeks={weeklyKm} />
+              <p className="text-xs text-muted-foreground">
+                Diese Woche {Math.round(weekActuals.km * 10) / 10} km ·{" "}
+                <span
+                  className={
+                    kmDelta > 0
+                      ? "text-emerald-400"
+                      : kmDelta < 0
+                        ? "text-amber-400"
+                        : ""
+                  }
+                >
+                  {kmDelta > 0 ? "+" : ""}
+                  {kmDelta} km zur Vorwoche
+                </span>{" "}
+                · die laufende Woche ist gedämpft, weil sie noch nicht fertig
+                ist.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Sobald du Läufe mit Distanz loggst, wächst hier deine
+              Volumenkurve — die wichtigste Grafik im Ultra-Aufbau.
+            </p>
+          )}
         </CardContent>
       </Card>
 

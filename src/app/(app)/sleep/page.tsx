@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Moon } from "lucide-react";
-import { loadSleepPage } from "@/server/queries/sleep";
+import { Activity, BedDouble, Heart, HeartPulse, Moon } from "lucide-react";
+import { loadSleepPage, TREND_DAYS } from "@/server/queries/sleep";
 import { sleepPlan, tomorrowPrep } from "@/domain/sleep";
 import { formatLongDate, todayISO } from "@/domain/dates";
 import { RECOVERY_RED_BELOW } from "@/domain/readiness";
 import { SHIFT_TIME_LABEL, SHIFT_TYPE_LABEL } from "@/lib/labels";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import { Ring } from "@/components/ui/ring";
+import { StatTile } from "@/components/ui/stat-tile";
+import { MetricTrendChart } from "@/components/fitness/metric-trend-chart-lazy";
 import { DayTimeline } from "@/components/sleep/day-timeline";
 import { FastingSection } from "@/components/fasting/fasting-section";
 import { fastingPlan } from "@/domain/fasting";
@@ -51,9 +53,16 @@ export default async function SleepPage() {
     shiftTomorrow,
     sleepHours,
     recoveryPct,
+    hrv,
+    rhr,
+    recoverySeries,
+    sleepSeries,
+    avg7,
     shiftMap,
     rotationStart,
   } = await loadSleepPage(today, FASTING_DAYS + 1);
+
+  const hasTrend = recoverySeries.length >= 2 || sleepSeries.length >= 2;
 
   // Schicht-Fasten: manuell eingetragene Tage gewinnen über die Rotation.
   const fasting = fastingPlan(today, FASTING_DAYS + 1, shiftMap, rotationStart);
@@ -69,6 +78,7 @@ export default async function SleepPage() {
   });
 
   const rec = recoveryPct !== undefined ? recoveryTone(recoveryPct) : undefined;
+  const sleepTarget = plan?.sleepTargetHours ?? 7;
 
   return (
     <div className="space-y-5">
@@ -102,22 +112,91 @@ export default async function SleepPage() {
               <span className="text-xs text-muted-foreground">–</span>
             </Ring>
           )}
+          {/* Die Zahlen selbst stehen in den Kacheln darunter — hier zählt
+              die Einordnung. */}
           <div className="min-w-0 flex-1 space-y-1 text-sm">
             <p className="font-medium">Erholung heute</p>
-            <p className="text-muted-foreground">
-              Schlaf:{" "}
-              <span className="text-foreground">
-                {sleepHours !== undefined ? `${sleepHours} h` : "–"}
-              </span>
-            </p>
             <p className={rec ? rec.className : "text-muted-foreground"}>
+              {rec?.label ?? "Noch keine Werte für heute"}
+            </p>
+            <p className="text-xs text-muted-foreground">
               {recoveryPct !== undefined
-                ? `Recovery ${recoveryPct} % — ${rec?.label}`
-                : "WHOOP-Werte im Heute-Tab eintragen"}
+                ? "Grundlage für die Autoregulation im Coach."
+                : "WHOOP-Werte im Heute-Tab eintragen."}
             </p>
           </div>
         </CardContent>
       </Card>
+
+      {/* Kennzahlen: heutiger Wert, darunter der 7-Tage-Schnitt als Kontext */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatTile
+          label="Recovery"
+          value={recoveryPct ?? "–"}
+          unit={recoveryPct !== undefined ? "%" : undefined}
+          icon={<HeartPulse className="size-5" />}
+          delta={avg7.recovery !== null ? `Ø 7 T. ${avg7.recovery} %` : undefined}
+        />
+        <StatTile
+          label="Schlaf"
+          value={sleepHours ?? "–"}
+          unit={sleepHours !== undefined ? "h" : undefined}
+          icon={<BedDouble className="size-5" />}
+          delta={avg7.sleep !== null ? `Ø 7 T. ${avg7.sleep} h` : undefined}
+        />
+        <StatTile
+          label="HRV"
+          value={hrv ?? "–"}
+          unit={hrv !== undefined ? "ms" : undefined}
+          icon={<Activity className="size-5" />}
+          delta={avg7.hrv !== null ? `Ø 7 T. ${avg7.hrv} ms` : undefined}
+        />
+        <StatTile
+          label="Ruhepuls"
+          value={rhr ?? "–"}
+          unit={rhr !== undefined ? "bpm" : undefined}
+          icon={<Heart className="size-5" />}
+          delta={avg7.rhr !== null ? `Ø 7 T. ${avg7.rhr}` : undefined}
+        />
+      </div>
+
+      {/* Verläufe: zwei Einheiten = zwei Diagramme, nie zwei Y-Achsen */}
+      {hasTrend ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Verlauf · letzte {TREND_DAYS} Tage</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {recoverySeries.length >= 2 ? (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  Recovery in % — gestrichelt: rote Zone ab{" "}
+                  {RECOVERY_RED_BELOW} %
+                </p>
+                <MetricTrendChart
+                  points={recoverySeries}
+                  unit="%"
+                  domain={[0, 100]}
+                  reference={RECOVERY_RED_BELOW}
+                />
+              </div>
+            ) : null}
+            {sleepSeries.length >= 2 ? (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  Schlaf in Stunden — gestrichelt: Ziel {sleepTarget} h
+                </p>
+                <MetricTrendChart
+                  points={sleepSeries}
+                  unit="h"
+                  domain={[0, 10]}
+                  reference={sleepTarget}
+                />
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {!shiftToday ? (
         <Card>

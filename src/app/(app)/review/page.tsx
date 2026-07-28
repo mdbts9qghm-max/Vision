@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  CheckCheck,
   ChevronLeft,
   ChevronRight,
   Dumbbell,
@@ -21,6 +22,7 @@ import {
 } from "@/domain/dates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ring } from "@/components/ui/ring";
+import { StatTile } from "@/components/ui/stat-tile";
 import { ReflectionForm } from "@/components/review/reflection-form";
 
 export const metadata: Metadata = { title: "Rückblick — Vision" };
@@ -173,43 +175,36 @@ export default async function ReviewPage({
       )}
 
       {/* Kennzahlen der Woche */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 py-4 text-center">
-            <span className="text-lg font-bold">
-              {habitPct !== null ? `${habitPct}%` : "–"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              Habits {habitWeek.done}/{habitWeek.target}
-            </span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 py-4 text-center">
-            <Footprints className="size-4 text-primary/70" aria-hidden />
-            <span className="text-lg font-bold">
-              {Math.round(data.training.km * 10) / 10}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              km · {data.training.runCount} Läufe
-            </span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-1 py-4 text-center">
-            <HeartPulse className="size-4 text-primary/70" aria-hidden />
-            <span className="text-lg font-bold">
-              {data.recovery.avg !== null ? `${data.recovery.avg}%` : "–"}
-            </span>
-            <span className="text-xs text-muted-foreground">Ø Recovery</span>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-3">
+        <StatTile
+          label="Habits"
+          value={habitPct !== null ? habitPct : "–"}
+          unit={habitPct !== null ? "%" : undefined}
+          icon={<CheckCheck className="size-5" />}
+          delta={`${habitWeek.done} von ${habitWeek.target}`}
+        />
+        <StatTile
+          label="Laufumfang"
+          value={Math.round(data.training.km * 10) / 10}
+          unit="km"
+          icon={<Footprints className="size-5" />}
+          delta={`${data.training.runCount} ${data.training.runCount === 1 ? "Lauf" : "Läufe"}`}
+        />
+        <StatTile
+          label="Ø Recovery"
+          value={data.recovery.avg !== null ? data.recovery.avg : "–"}
+          unit={data.recovery.avg !== null ? "%" : undefined}
+          icon={<HeartPulse className="size-5" />}
+          delta={`${data.recovery.count} von 7 Tagen`}
+        />
+        <StatTile
+          label="Kraft"
+          value={data.training.gymCount}
+          unit="×"
+          icon={<Dumbbell className="size-5" />}
+          delta="Einheiten"
+        />
       </div>
-
-      <p className="-mt-2 flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
-        <Dumbbell className="size-3.5" aria-hidden />
-        {data.training.gymCount}× Kraft diese Woche
-      </p>
 
       {/* Wohlbefinden-Trend */}
       {trend.some((t) => t.wellbeing !== null) ? (
