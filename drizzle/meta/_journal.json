@@ -78,6 +78,13 @@
       "when": 1784756395098,
       "tag": "0010_pink_warhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1785268613892,
+      "tag": "0011_nostalgic_captain_cross",
+      "breakpoints": true
     }
   ]
 }

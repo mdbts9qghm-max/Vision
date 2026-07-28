@@ -196,4 +196,6 @@ async function regenerate(): Promise<void> {
 function revalidateCoachViews() {
   revalidatePath("/coach");
   revalidatePath("/dashboard");
+  // Das Schicht-Fasten leitet seine Fenster aus denselben Schichten ab.
+  revalidatePath("/fasting");
 }

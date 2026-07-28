@@ -3,6 +3,7 @@ import { db } from "@/server/db";
 import {
   checkins,
   coachSettings,
+  fastingSettings,
   dayFocus,
   goals,
   habitCompletions,
@@ -34,6 +35,8 @@ export interface DashboardData {
   weekActuals: { km: number; gymCount: number; runCount: number };
   metricsToday: Partial<Record<string, number>>;
   checkinToday?: Checkin;
+  /** Startdatum der Fasten-Rotation (null = nicht gesetzt). */
+  fastingRotationStart: string | null;
 }
 
 const DEFAULT_SETTINGS = (currentWeek: string): CoachSettings => ({
@@ -69,6 +72,7 @@ export async function loadDashboard(
     goalRows,
     milestoneRows,
     checkinRows,
+    fastingRows,
   ] = await db.batch([
     db.select().from(habits).orderBy(asc(habits.createdAt)),
     db
@@ -92,7 +96,11 @@ export async function loadDashboard(
     db
       .select({ date: shifts.date, type: shifts.type })
       .from(shifts)
-      .where(and(gte(shifts.date, currentWeek), lte(shifts.date, weekEnd))),
+      // Einen Tag über das Wochenende hinaus: das Fasten-Fenster blickt auf
+      // morgen ("öffnet morgen um …"). Extra-Tage stören die Wochenlogik nicht.
+      .where(
+        and(gte(shifts.date, currentWeek), lte(shifts.date, addDaysISO(weekEnd, 1))),
+      ),
     db.select().from(coachSettings),
     db
       .select({ km: sql<number>`coalesce(sum(${plannedSessions.targetKm}), 0)` })
@@ -123,6 +131,10 @@ export async function loadDashboard(
       })
       .from(checkins)
       .where(eq(checkins.date, today)),
+    db
+      .select({ rotationStart: fastingSettings.rotationStart })
+      .from(fastingSettings)
+      .where(eq(fastingSettings.id, "singleton")),
   ]);
 
   const metricsToday: Partial<Record<string, number>> = {};
@@ -153,5 +165,6 @@ export async function loadDashboard(
     },
     metricsToday,
     checkinToday: checkinRows[0],
+    fastingRotationStart: fastingRows[0]?.rotationStart ?? null,
   };
 }

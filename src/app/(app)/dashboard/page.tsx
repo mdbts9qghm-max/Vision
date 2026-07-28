@@ -6,6 +6,7 @@ import {
   PlusCircle,
   Smile,
   Sun,
+  Timer,
   TrendingUp,
 } from "lucide-react";
 import { logout } from "@/server/actions/auth";
@@ -34,6 +35,9 @@ import { WeekCard } from "@/components/dashboard/week-card";
 import { ActiveGoalCard } from "@/components/dashboard/active-goal";
 import { QuickLog } from "@/components/dashboard/quick-log";
 import { CheckinCard } from "@/components/dashboard/checkin-card";
+import { FastingStatusCard } from "@/components/fasting/fasting-status-card";
+import { effectiveShift, windowForShift } from "@/domain/fasting";
+import { addDaysISO } from "@/domain/dates";
 
 export const metadata: Metadata = { title: "Heute — Vision" };
 
@@ -52,12 +56,22 @@ export default async function DashboardPage() {
     weekActuals,
     metricsToday,
     checkinToday,
+    fastingRotationStart,
   } = await loadDashboard(today, currentWeek);
 
   // 2.1 Schicht-Kontext
   const shiftToday = shiftOn(shifts, today);
   const statusToday = (completions: { date: string; status: string }[]) =>
     completions.find((c) => c.date === today)?.status;
+
+  // 2.2 Schicht-Fasten: Fenster aus der effektiven Schicht (manuell > Rotation)
+  const fastingToday = effectiveShift(today, shifts, fastingRotationStart);
+  const fastingTomorrow = effectiveShift(
+    addDaysISO(today, 1),
+    shifts,
+    fastingRotationStart,
+  );
+  const fastingWindow = windowForShift(fastingToday.shift);
 
   // 2.3 Heute fällige Habits
   const active = all.filter(({ habit }) => !habit.archivedAt);
@@ -156,6 +170,22 @@ export default async function DashboardPage() {
           readiness={signals.readiness}
         />
       </section>
+
+      {/* Schicht-Fasten — Essensfenster live */}
+      {fastingWindow ? (
+        <section className="space-y-2">
+          <SectionLabel icon={<Timer className="size-3.5" aria-hidden />}>
+            Fasten
+          </SectionLabel>
+          <FastingStatusCard
+            shift={fastingToday.shift}
+            window={fastingWindow}
+            nextDayStartMin={
+              windowForShift(fastingTomorrow.shift)?.startMin ?? null
+            }
+          />
+        </section>
+      ) : null}
 
       {/* Befinden — mentaler Check-in */}
       <section className="space-y-2">

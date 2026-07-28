@@ -205,6 +205,19 @@ export const readinessChecks = sqliteTable("readiness_checks", {
   createdAt: createdAt(),
 });
 
+/**
+ * Schicht-Fasten (16/8), genau eine Zeile (id = "singleton").
+ * `rotationStart` ist der Tag, an dem die Standard-Rotation mit ihrem ersten
+ * Eintrag beginnt; ohne Datum wird nichts abgeleitet.
+ */
+export const fastingSettings = sqliteTable("fasting_settings", {
+  id: text("id").primaryKey().default("singleton"),
+  rotationStart: text("rotation_start"), // YYYY-MM-DD oder null
+  updatedAt: text("updated_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+});
+
 /** Genau eine Zeile (id = "singleton") — Parameter des Coaches. */
 export const coachSettings = sqliteTable("coach_settings", {
   id: text("id").primaryKey().default("singleton"),
