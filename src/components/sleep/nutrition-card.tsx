@@ -1,6 +1,6 @@
 import { Apple, Droplets, Flame, UtensilsCrossed } from "lucide-react";
 import type { NutritionPlan } from "@/domain/nutrition";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 
 function TipList({
   title,
@@ -38,15 +38,12 @@ export function NutritionCard({
   sessionLabel?: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="gap-1">
-        <CardTitle className="flex items-center gap-2">
-          <Apple className="size-5 text-primary" aria-hidden />
-          Ernährung
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">{plan.headline}</p>
-      </CardHeader>
-      <CardContent className="space-y-5">
+    <CollapsibleCard
+      icon={<Apple className="size-5 shrink-0 text-primary" aria-hidden />}
+      title="Ernährung"
+      subtitle={plan.headline}
+    >
+      <div className="space-y-5">
         {plan.protein || plan.carbs ? (
           <div className="grid grid-cols-2 gap-3">
             {plan.protein ? (
@@ -97,7 +94,7 @@ export function NutritionCard({
           icon={<Droplets className="size-3.5" aria-hidden />}
           items={plan.hydrationTips}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </CollapsibleCard>
   );
 }

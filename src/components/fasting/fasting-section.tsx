@@ -1,8 +1,7 @@
 import { CalendarRange, Info, Lightbulb, Timer } from "lucide-react";
 import { FASTING_TIPS, type FastingDay } from "@/domain/fasting";
 import { SHIFT_TYPE_LABEL } from "@/lib/labels";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SectionLabel } from "@/components/dashboard/section-label";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import { FastingStatusCard } from "@/components/fasting/fasting-status-card";
 import { FastingWeek } from "@/components/fasting/fasting-week";
 import { RotationForm } from "@/components/fasting/rotation-form";
@@ -72,44 +71,48 @@ export function FastingSection({
       ) : null}
 
       {/* Tagesübersicht */}
-      <div className="space-y-2">
-        <SectionLabel icon={<CalendarRange className="size-3.5" aria-hidden />}>
-          Nächste {days} Tage
-        </SectionLabel>
-        <FastingWeek days={plan.slice(0, days)} today={today} />
-        <p className="px-1 text-xs text-muted-foreground">
-          Rechts je Tag die Schicht ändern — ein manuell gesetzter Tag (z. B.
-          V-Schicht) gewinnt immer über die Rotation.
-        </p>
-      </div>
+      <CollapsibleCard
+        icon={<CalendarRange className="size-5 shrink-0 text-primary" aria-hidden />}
+        title={`Nächste ${days} Tage`}
+        subtitle="Fenster je Tag · Schicht änderbar"
+      >
+        <div className="space-y-2">
+          <FastingWeek days={plan.slice(0, days)} today={today} />
+          <p className="px-1 text-xs text-muted-foreground">
+            Rechts je Tag die Schicht ändern — ein manuell gesetzter Tag (z. B.
+            V-Schicht) gewinnt immer über die Rotation.
+          </p>
+        </div>
+      </CollapsibleCard>
 
       {/* Rotation */}
-      <div className="space-y-2">
-        <SectionLabel icon={<CalendarRange className="size-3.5" aria-hidden />}>
-          Rotation
-        </SectionLabel>
-        <Card>
-          <CardContent className="space-y-3 py-4">
-            {pendingRotationDays > 0 ? (
-              <p className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  {pendingRotationDays} Tage kommen aktuell nur aus der Rotation.
-                </span>{" "}
-                Fürs Fasten reicht das. Damit auch Coach und Tagesplan sie
-                nutzen, unten in den Schichtplan übernehmen.
-              </p>
-            ) : null}
-            <RotationForm initialStart={rotationStart} />
-          </CardContent>
-        </Card>
-      </div>
+      <CollapsibleCard
+        icon={<CalendarRange className="size-5 shrink-0 text-primary" aria-hidden />}
+        title="Rotation"
+        subtitle={
+          rotationStart
+            ? `Start ${rotationStart}`
+            : "Noch kein Startdatum gesetzt"
+        }
+        defaultOpen={!rotationStart}
+      >
+        <div className="space-y-3">
+          {pendingRotationDays > 0 ? (
+            <p className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {pendingRotationDays} Tage kommen aktuell nur aus der Rotation.
+              </span>{" "}
+              Fürs Fasten reicht das. Damit auch Coach und Tagesplan sie nutzen,
+              unten in den Schichtplan übernehmen.
+            </p>
+          ) : null}
+          <RotationForm initialStart={rotationStart} />
+        </div>
+      </CollapsibleCard>
 
       {/* Fenster je Schicht */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Fenster je Schicht</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1.5 text-sm">
+      <CollapsibleCard title="Fenster je Schicht">
+        <div className="space-y-1.5 text-sm">
           {(
             [
               ["day", "07:00–19:00 Arbeit", "09:00–17:00"],
@@ -129,18 +132,16 @@ export function FastingSection({
               </span>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </CollapsibleCard>
 
       {/* Hinweise */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Lightbulb className="size-4 text-primary" aria-hidden />
-            So sitzt das Fenster richtig
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
+      <CollapsibleCard
+        icon={<Lightbulb className="size-5 shrink-0 text-primary" aria-hidden />}
+        title="So sitzt das Fenster richtig"
+        subtitle="Grundprinzip, Nachtschicht, Merksätze"
+      >
+        <div className="space-y-5">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Grundprinzip
@@ -160,8 +161,8 @@ export function FastingSection({
               </p>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CollapsibleCard>
 
       <p className="flex items-start gap-2 px-1 text-xs text-muted-foreground">
         <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />

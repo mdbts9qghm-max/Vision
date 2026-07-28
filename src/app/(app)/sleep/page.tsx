@@ -11,7 +11,8 @@ import {
   SHIFT_TIME_LABEL,
   SHIFT_TYPE_LABEL,
 } from "@/lib/labels";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import { Ring } from "@/components/ui/ring";
 import { DayTimeline } from "@/components/sleep/day-timeline";
 import { NutritionCard } from "@/components/sleep/nutrition-card";
@@ -152,24 +153,21 @@ export default async function SleepPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader className="gap-1">
-            <CardTitle>{plan?.title}</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {SHIFT_TYPE_LABEL[shiftToday]} · {SHIFT_TIME_LABEL[shiftToday]} ·
-              Schlafziel {plan?.sleepTargetHours} h
-            </p>
-          </CardHeader>
-          <CardContent>{plan ? <DayTimeline plan={plan} /> : null}</CardContent>
-        </Card>
+        <CollapsibleCard
+          defaultOpen
+          title={plan?.title}
+          subtitle={`${SHIFT_TYPE_LABEL[shiftToday]} · ${SHIFT_TIME_LABEL[shiftToday]} · Schlafziel ${plan?.sleepTargetHours} h`}
+        >
+          {plan ? <DayTimeline plan={plan} /> : null}
+        </CollapsibleCard>
       )}
 
       {plan ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Erholung</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
+        <CollapsibleCard
+          title="Erholung"
+          subtitle="Heute beachten, Abendroutine, Vorbereitung für morgen"
+        >
+          <div className="space-y-5">
             <TipList title="Heute beachten" items={plan.tips} />
             <TipList title="Abendroutine" items={plan.eveningRoutine} />
             <TipList
@@ -180,8 +178,8 @@ export default async function SleepPage() {
               }
               items={prepTomorrow}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
       ) : null}
 
       {fuel ? (
@@ -199,17 +197,12 @@ export default async function SleepPage() {
       />
 
       {tomorrowPlan && shiftTomorrow ? (
-        <Card>
-          <CardHeader className="gap-1">
-            <CardTitle className="text-base">Morgen · {tomorrowPlan.title}</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              {SHIFT_TYPE_LABEL[shiftTomorrow]} — zum Vorausplanen
-            </p>
-          </CardHeader>
-          <CardContent>
-            <DayTimeline plan={tomorrowPlan} />
-          </CardContent>
-        </Card>
+        <CollapsibleCard
+          title={`Morgen · ${tomorrowPlan.title}`}
+          subtitle={`${SHIFT_TYPE_LABEL[shiftTomorrow]} — zum Vorausplanen`}
+        >
+          <DayTimeline plan={tomorrowPlan} />
+        </CollapsibleCard>
       ) : null}
     </div>
   );
