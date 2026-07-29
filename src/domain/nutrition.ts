@@ -107,41 +107,46 @@ export function shiftFuelTips(
   switch (shift) {
     case "day":
       return [
-        "Hauptmahlzeiten in die Tagphase legen — vor der Schicht ordentlich frühstücken.",
+        "Essensfenster 09–17 Uhr: erste Mahlzeit ~09:00 auf der Schicht, letzte bis 16:30.",
+        "Beide Hauptmahlzeiten fallen in die Arbeitszeit — am Vorabend vorbereiten und mitnehmen.",
         "Letztes Koffein ~15 Uhr (6–8 h vor dem Schlaf).",
-        "Nach der Schicht eine proteinreiche Mahlzeit zur Regeneration.",
+        "Nach Feierabend nicht mehr essen — die Regeneration deckt die Mahlzeit um 16:30 ab.",
       ];
     case "v":
       return [
-        "Frühstück vor der Schicht, über den langen Tag regelmäßig essen.",
+        "Essensfenster 09–17 Uhr, die Schicht geht bis 20 Uhr — beide Mahlzeiten auf die Arbeit legen.",
         "Letztes Koffein ~15:30, damit der Schlaf nicht leidet.",
-        "Nach der späten Schicht nur noch leicht essen.",
+        "Nach der späten Schicht nichts mehr essen — Wasser oder Tee.",
       ];
     case "night":
       if (opts.firstNight) {
         return [
+          "Essensfenster 09–22 Uhr — bewusst länger, weil dieser Tag 29 h dauert.",
+          "Frühstück ~09:00 vor dem Vormittagslauf.",
+          "Letzte richtige Mahlzeit ~13:30 — vor dem Vorschlaf (ab 15 Uhr) nichts Schweres mehr.",
           "Hauptmahlzeit VOR die Schicht (~17:30 Uhr) — nicht mitten in der Nacht.",
-          "Vor dem Vorschlaf (ab ~15 Uhr) nichts Schweres mehr essen.",
-          "Nachts nur leichte, proteinbetonte Snacks (Quark, Nüsse, Skyr).",
+          "In der Schicht höchstens eine leichte, proteinbetonte Kleinigkeit bis 22:00 (Quark, Nüsse, Skyr), danach ist zu.",
           "Koffein zum Schichtstart, letzte Dosis bis ~00:30.",
         ];
       }
       return [
-        "Vor der Nacht eine Hauptmahlzeit essen; nachts leichte Protein-Snacks.",
-        "Vor dem Tagschlaf (08 Uhr) keine große Mahlzeit — sonst leidet der Schlaf.",
+        "Essensfenster 14–22 Uhr: vor dem Tagschlaf wird nicht mehr gegessen, erst nach dem Aufstehen.",
+        "Erste Mahlzeit ~14:30 proteinreich, Hauptmahlzeit ~17:30 vor der Schicht.",
+        "In der Schicht nur bis 22:00 eine Kleinigkeit — danach durch bis 14 Uhr.",
         "Kein Koffein mehr ab ~00:30.",
       ];
     case "sleep":
       return [
-        "Vor dem Tagschlaf (08 Uhr) keine große Mahlzeit — höchstens einen leichten Snack.",
-        "Nach dem Aufstehen (~14 Uhr) proteinreich essen und den Tag über auffüllen.",
-        "Nachmittags kein Koffein mehr, damit der Nachholschlaf klappt.",
+        "Essensfenster 14–20 Uhr: vor dem Tagschlaf nichts mehr, es öffnet nach dem Aufstehen.",
+        "Nach dem Aufstehen (~14:30) proteinreich essen und bis 19 Uhr auffüllen.",
+        "Ab ~15 Uhr kein Koffein mehr, damit der frühe Nachtschlaf klappt.",
       ];
     case "vacation":
     case "free":
       return [
-        "Normaler Tagesrhythmus — die Chance für saubere, regelmäßige Mahlzeiten.",
-        "Vor der Schlüsseleinheit kohlenhydratreich frühstücken.",
+        "Essensfenster 09–17 Uhr — der ruhigste Tag, hier sitzen die Mahlzeiten am saubersten.",
+        "Um 09:00 kohlenhydratreich frühstücken, Schlüsseleinheit ab 10 Uhr.",
+        "Nach dem Lauf (~12:30) Recovery-Mahlzeit, letzte Mahlzeit bis 16:30.",
         "Letztes Koffein ~15 Uhr.",
       ];
     case "sick":
@@ -166,7 +171,7 @@ export function trainingFuelTips(
   switch (kind) {
     case "longrun":
       return [
-        "2–3 h vorher eine kohlenhydratreiche Mahlzeit (z. B. Haferflocken, Banane, Toast).",
+        "~1 h vorher kohlenhydratreich frühstücken (Haferflocken, Banane, Toast) — an freien Tagen öffnet das Fenster um 09:00, Start ist 10:00.",
         carbs
           ? `Unterwegs ${carbs.perHourMinG}–${carbs.perHourMaxG} g KH/h (≈ ${carbs.totalMinG}–${carbs.totalMaxG} g gesamt) — Darm trainieren, Long Run ist die Generalprobe.`
           : "Bei über 90 min unterwegs Kohlenhydrate zuführen (Gel, Riegel, Getränk).",

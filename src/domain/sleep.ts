@@ -86,17 +86,23 @@ export function sleepPlan(
         ],
         markers: [
           { atMin: hm(6), kind: "wake", label: "Aufstehen" },
+          { atMin: hm(9), kind: "meal", label: "Erste Mahlzeit — Fenster öffnet" },
           { atMin: hm(15), kind: "caffeine", label: "Letztes Koffein" },
-          { atMin: hm(19, 45), kind: "meal", label: "Abendessen" },
+          {
+            atMin: hm(16, 30),
+            kind: "meal",
+            label: "Letzte Mahlzeit — Fenster schließt 17:00",
+          },
         ],
         sleepTargetHours: 7.5,
         tips: [
           "Nach der Schicht keine harten Intervalle — das verschlechtert den Schlaf. Kraft oder Mobility ist ok.",
           "Letztes Koffein 6–8 h vor dem Zubettgehen (≈15 Uhr).",
+          "Das Fenster liegt komplett in der Schicht (09–17 Uhr) — plane die letzte Mahlzeit noch auf der Arbeit ein, zu Hause wird nicht mehr gegessen.",
           "Schlafraum dunkel, kühl, leise; feste Zubett-Zeit stabilisiert die innere Uhr.",
         ],
         eveningRoutine: [
-          "Letzte größere Mahlzeit ~2 h vor dem Schlaf, danach nur leicht.",
+          "Nach Feierabend nichts mehr essen — das Fenster ist seit 17:00 zu. Wasser, Tee, schwarzer Kaffee sind frei.",
           "1 h vor dem Bett: Licht dimmen, Bildschirme runter.",
           "Schlafraum auf ~18 °C, dunkel und leise vorbereiten.",
           "Zubettgehen ~22:30 anpeilen — feste Zeit hält die innere Uhr stabil.",
@@ -120,6 +126,12 @@ export function sleepPlan(
           ],
           markers: [
             { atMin: hm(7), kind: "wake", label: "Aufstehen" },
+            { atMin: hm(9), kind: "meal", label: "Frühstück — Fenster öffnet, vor dem Lauf" },
+            {
+              atMin: hm(13, 30),
+              kind: "meal",
+              label: "Letzte Mahlzeit vor dem Vorschlaf",
+            },
             { atMin: hm(17, 30), kind: "meal", label: "Hauptmahlzeit vor der Schicht" },
             { atMin: hm(19, 30), kind: "caffeine", label: "Koffein zum Schichtstart" },
           ],
@@ -127,11 +139,13 @@ export function sleepPlan(
           tips: [
             "Training am freien Vormittag (10–12 Uhr) und ~2 h vor dem Vorschlaf beenden — nicht nach dem Nap.",
             "Vorschlaf 15–17 Uhr ist Pflicht-Werkzeug: 90-min-Zyklus für echte Erholung.",
-            "Hauptmahlzeit vor die Schicht legen; nachts nur leichte, proteinbetonte Snacks.",
+            "Um 09:00 frühstücken, dann laufen — nüchtern in einen 2-h-Lauf zu starten ist im Aufbau unnötig hart.",
+            "Letzte richtige Mahlzeit ~13:30: mit vollem Magen schläfst du um 15 Uhr schlechter vor.",
+            "Hauptmahlzeit nach dem Nap vor die Schicht legen; in der Schicht höchstens noch eine proteinbetonte Kleinigkeit bis 22:00 — dann schließt das Fenster.",
             "In der Schicht hell, auf dem Heimweg morgens Sonnenbrille.",
           ],
           eveningRoutine: [
-            "Vor der Schicht: Hauptmahlzeit gegessen, leichte Snacks für die Nacht einpacken.",
+            "Vor der Schicht: Hauptmahlzeit gegessen, eine leichte Kleinigkeit für die erste Schichthälfte (bis 22:00) einpacken.",
             "Koffein zum Schichtstart — letzte Dosis bis ~00:30.",
             "In der Schicht hell halten (fördert Wachheit).",
             "Sonnenbrille + Blackout fürs Schlafzimmer für den Tagschlaf danach bereitlegen.",
@@ -150,16 +164,22 @@ export function sleepPlan(
           { atMin: hm(0, 30), kind: "caffeine", label: "Letztes Koffein (6–8 h vor Tagschlaf)" },
           { atMin: hm(7), kind: "light", label: "Sonnenbrille auf dem Heimweg" },
           { atMin: hm(14), kind: "wake", label: "Aufstehen" },
+          {
+            atMin: hm(14, 30),
+            kind: "meal",
+            label: "Erste Mahlzeit nach dem Tagschlaf — Fenster öffnet",
+          },
           { atMin: hm(17, 30), kind: "meal", label: "Hauptmahlzeit vor der Schicht" },
         ],
         sleepTargetHours: 6,
         tips: [
           "Folgenächte sind Erhalt, kein Aufbau: kein Training, der Vormittag gehört dem Schlaf.",
           "Tagschlaf 08–14 Uhr aktiv als zu wenig behandeln — mit Kurz-Nap oder früherem Zubettgehen verlängern.",
+          "Das Fenster öffnet erst um 14 Uhr, weil du davor schläfst — vor dem Tagschlaf wird nicht mehr gegessen.",
           "Kein Koffein mehr ab ~00:30, sonst leidet der ohnehin knappe Tagschlaf.",
         ],
         eveningRoutine: [
-          "Vor der nächsten Nacht: Hauptmahlzeit essen, Snacks einpacken.",
+          "Vor der nächsten Nacht: Hauptmahlzeit essen, eine Kleinigkeit für die erste Schichthälfte (bis 22:00) einpacken.",
           "Kurz-Nap gegen 16 Uhr, falls der Tagschlaf zu knapp war.",
           "Koffein zum Schichtstart, letzte Dosis bis ~00:30.",
           "Schlafzimmer für den morgigen Tagschlaf abdunkeln.",
@@ -183,6 +203,17 @@ export function sleepPlan(
         markers: [
           { atMin: hm(7), kind: "light", label: "Sonnenbrille auf dem Heimweg" },
           { atMin: hm(14), kind: "wake", label: "Aufstehen" },
+          {
+            atMin: hm(14, 30),
+            kind: "meal",
+            label: "Erste Mahlzeit — Fenster öffnet",
+          },
+          { atMin: hm(15), kind: "caffeine", label: "Letztes Koffein (7 h vor dem Bett)" },
+          {
+            atMin: hm(19),
+            kind: "meal",
+            label: "Letzte Mahlzeit — Fenster schließt 20:00",
+          },
         ],
         sleepTargetHours: 6.5,
         tips: [
@@ -204,26 +235,37 @@ export function sleepPlan(
         segments: [
           ...span(hm(23), hm(31), "sleep", "Nachtschlaf"),
           {
-            startMin: hm(9),
-            endMin: hm(11),
+            startMin: hm(10),
+            endMin: hm(12),
             kind: "training",
             label: "Long Run / Schlüsseleinheit",
           },
         ],
         markers: [
           { atMin: hm(7), kind: "wake", label: "Aufstehen" },
+          {
+            atMin: hm(9),
+            kind: "meal",
+            label: "Frühstück (KH für den Long Run) — Fenster öffnet",
+          },
+          { atMin: hm(12, 30), kind: "meal", label: "Recovery-Mahlzeit nach dem Lauf" },
           { atMin: hm(15), kind: "caffeine", label: "Letztes Koffein" },
-          { atMin: hm(8), kind: "meal", label: "Frühstück (KH für den Long Run)" },
+          {
+            atMin: hm(16, 30),
+            kind: "meal",
+            label: "Letzte Mahlzeit — Fenster schließt 17:00",
+          },
         ],
         sleepTargetHours: 8,
         tips: [
           "Bester Trainingstag — die wichtigste Einheit der Woche hierhin legen.",
           "Voller Nachtschlaf (~8 h) ist die Basis: nur möglich, wenn keine Nacht vorausging.",
+          "Long Run bewusst ab 10 Uhr: um 09:00 öffnet das Essensfenster, damit du die Kohlenhydrate vorher drin hast.",
           "Long Run ist auch Ernährungs- und Ausrüstungs-Generalprobe.",
         ],
         eveningRoutine: [
           "Auf ~8 h Schlaf hinarbeiten — die Basis für morgen.",
-          "Kohlenhydrate am Abend auffüllen (falls morgen ein Long Run ansteht).",
+          "Kohlenhydrate noch vor Fensterschluss (17:00) auffüllen, falls morgen ein Long Run ansteht — abends wird nicht mehr nachgelegt.",
           "1 h vor dem Bett Bildschirme runter, Licht dimmen; Schlafraum kühl & dunkel.",
         ],
       };
@@ -243,17 +285,24 @@ export function sleepPlan(
         ],
         markers: [
           { atMin: hm(6, 30), kind: "wake", label: "Aufstehen" },
+          { atMin: hm(9), kind: "meal", label: "Erste Mahlzeit — Fenster öffnet" },
           { atMin: hm(15, 30), kind: "caffeine", label: "Letztes Koffein" },
-          { atMin: hm(20, 15), kind: "meal", label: "Abendessen" },
+          {
+            atMin: hm(16, 30),
+            kind: "meal",
+            label: "Letzte Mahlzeit — Fenster schließt 17:00",
+          },
         ],
         sleepTargetHours: 7,
         tips: [
           "Wie Tagschicht mit noch engerem Fenster: laufen nur kurz während/nach der Schicht.",
+          "Das Fenster (09–17 Uhr) endet mitten in der Schicht — beide Mahlzeiten auf der Arbeit einplanen.",
+          "Die optionale Abendrunde läuft damit nüchtern: locker und kurz halten, nichts Hartes.",
           "Enges Zeitfenster — Schlaf hat Vorrang vor der Einheit.",
         ],
         eveningRoutine: [
           "Nach der späten Schicht bewusst runterfahren — kein intensives Training mehr.",
-          "Leichter Snack, kein Koffein; Licht dimmen.",
+          "Nach 17:00 nichts mehr essen; Wasser oder Tee, kein Koffein. Licht dimmen.",
           "Schlafraum dunkel & kühl, Zubettgehen ~23 Uhr.",
         ],
       };

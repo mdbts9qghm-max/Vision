@@ -34,7 +34,14 @@ const clock = (min: number) => {
  * plus Marker (Koffein/Mahlzeit/Licht/Aufstehen). Darunter der Ablauf als
  * zeitgestempelte, verlässliche Liste.
  */
-export function DayTimeline({ plan }: { plan: SleepPlan }) {
+export function DayTimeline({
+  plan,
+  eatingWindow,
+}: {
+  plan: SleepPlan;
+  /** Essensfenster des Tages — als eigene Spur unter dem Strahl. */
+  eatingWindow?: { startMin: number; endMin: number } | null;
+}) {
   const hours = [0, 6, 12, 18, 24];
   const orderedSegments = [...plan.segments].sort(
     (a, b) => a.startMin - b.startMin,
@@ -85,6 +92,22 @@ export function DayTimeline({ plan }: { plan: SleepPlan }) {
             </div>
           ))}
         </div>
+        {/* Essensfenster als eigene Spur — zeigt direkt, ob Mahlzeiten,
+            Training und Schlaf dazu passen. */}
+        {eatingWindow ? (
+          <div
+            className="relative h-2 w-full overflow-hidden rounded-full bg-muted/50"
+            title={`Essensfenster ${clock(eatingWindow.startMin)}–${clock(eatingWindow.endMin)}, sonst Fastenzeit`}
+          >
+            <div
+              className="absolute inset-y-0 rounded-full bg-primary"
+              style={{
+                left: pct(eatingWindow.startMin),
+                width: pct(eatingWindow.endMin - eatingWindow.startMin),
+              }}
+            />
+          </div>
+        ) : null}
         {/* Marker-Reihe */}
         <div className="relative h-4 w-full">
           {plan.markers.map((m, i) => (
@@ -123,6 +146,12 @@ export function DayTimeline({ plan }: { plan: SleepPlan }) {
             {SEGMENT_LABEL[k]}
           </span>
         ))}
+        {eatingWindow ? (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-1.5 w-3 rounded-full bg-primary" />
+            Essensfenster
+          </span>
+        ) : null}
       </div>
 
       {/* Verlässlicher Ablauf als Liste */}

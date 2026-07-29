@@ -9,7 +9,6 @@ import { averageOverDays, type SeriesPoint } from "@/domain/fitness";
 export const TREND_DAYS = 14;
 
 export interface SleepPageData {
-  shiftYesterday?: ShiftType;
   shiftToday?: ShiftType;
   shiftTomorrow?: ShiftType;
   sleepHours?: number;
@@ -78,7 +77,6 @@ export async function loadSleepPage(
   const round1 = (v: number | null) => (v === null ? null : Math.round(v * 10) / 10);
 
   return {
-    shiftYesterday: byDate[yesterday],
     shiftToday: byDate[today],
     shiftTomorrow: byDate[tomorrow],
     shiftMap: byDate,

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Activity, BedDouble, Heart, HeartPulse, Moon } from "lucide-react";
 import { loadSleepPage, TREND_DAYS } from "@/server/queries/sleep";
 import { sleepPlan, tomorrowPrep } from "@/domain/sleep";
-import { formatLongDate, todayISO } from "@/domain/dates";
+import { addDaysISO, formatLongDate, todayISO } from "@/domain/dates";
 import { RECOVERY_RED_BELOW } from "@/domain/readiness";
 import { SHIFT_TIME_LABEL, SHIFT_TYPE_LABEL } from "@/lib/labels";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { StatTile } from "@/components/ui/stat-tile";
 import { MetricTrendChart } from "@/components/fitness/metric-trend-chart-lazy";
 import { DayTimeline } from "@/components/sleep/day-timeline";
 import { FastingSection } from "@/components/fasting/fasting-section";
-import { fastingPlan } from "@/domain/fasting";
+import { fastingPlan, isFollowNight } from "@/domain/fasting";
 
 export const metadata: Metadata = { title: "Schlaf — Vision" };
 
@@ -48,7 +48,6 @@ function TipList({ title, items }: { title: string; items: string[] }) {
 export default async function SleepPage() {
   const today = todayISO();
   const {
-    shiftYesterday,
     shiftToday,
     shiftTomorrow,
     sleepHours,
@@ -67,9 +66,15 @@ export default async function SleepPage() {
   // Schicht-Fasten: manuell eingetragene Tage gewinnen über die Rotation.
   const fasting = fastingPlan(today, FASTING_DAYS + 1, shiftMap, rotationStart);
 
-  const firstNight = shiftToday === "night" && shiftYesterday !== "night";
+  // "Erste Nacht" aus derselben Quelle wie das Fastenfenster ableiten
+  // (effektive Schicht, Rotation eingeschlossen) — sonst könnten Schlafplan
+  // und Essensfenster für denselben Tag auseinanderlaufen.
+  const firstNight =
+    shiftToday === "night" && !isFollowNight(today, shiftMap, rotationStart);
   const plan = shiftToday ? sleepPlan(shiftToday, { firstNight }) : undefined;
-  const tomorrowFirstNight = shiftTomorrow === "night" && shiftToday !== "night";
+  const tomorrowFirstNight =
+    shiftTomorrow === "night" &&
+    !isFollowNight(addDaysISO(today, 1), shiftMap, rotationStart);
   const tomorrowPlan = shiftTomorrow
     ? sleepPlan(shiftTomorrow, { firstNight: tomorrowFirstNight })
     : undefined;
@@ -219,7 +224,9 @@ export default async function SleepPage() {
           title={plan?.title}
           subtitle={`${SHIFT_TYPE_LABEL[shiftToday]} · ${SHIFT_TIME_LABEL[shiftToday]} · Schlafziel ${plan?.sleepTargetHours} h`}
         >
-          {plan ? <DayTimeline plan={plan} /> : null}
+          {plan ? (
+            <DayTimeline plan={plan} eatingWindow={fasting[0]?.window} />
+          ) : null}
         </CollapsibleCard>
       )}
 
@@ -255,7 +262,7 @@ export default async function SleepPage() {
           title={`Morgen · ${tomorrowPlan.title}`}
           subtitle={`${SHIFT_TYPE_LABEL[shiftTomorrow]} — zum Vorausplanen`}
         >
-          <DayTimeline plan={tomorrowPlan} />
+          <DayTimeline plan={tomorrowPlan} eatingWindow={fasting[1]?.window} />
         </CollapsibleCard>
       ) : null}
     </div>

@@ -36,7 +36,7 @@ import { ActiveGoalCard } from "@/components/dashboard/active-goal";
 import { QuickLog } from "@/components/dashboard/quick-log";
 import { CheckinCard } from "@/components/dashboard/checkin-card";
 import { FastingStatusCard } from "@/components/fasting/fasting-status-card";
-import { effectiveShift, windowForShift } from "@/domain/fasting";
+import { effectiveShift, windowForDate } from "@/domain/fasting";
 import { addDaysISO } from "@/domain/dates";
 
 export const metadata: Metadata = { title: "Heute — Vision" };
@@ -64,14 +64,10 @@ export default async function DashboardPage() {
   const statusToday = (completions: { date: string; status: string }[]) =>
     completions.find((c) => c.date === today)?.status;
 
-  // 2.2 Schicht-Fasten: Fenster aus der effektiven Schicht (manuell > Rotation)
+  // 2.2 Schicht-Fasten: Fenster aus der effektiven Schicht (manuell > Rotation);
+  // windowForDate erkennt zusätzlich Folgenächte (Tagschlaf bis 14 Uhr).
   const fastingToday = effectiveShift(today, shifts, fastingRotationStart);
-  const fastingTomorrow = effectiveShift(
-    addDaysISO(today, 1),
-    shifts,
-    fastingRotationStart,
-  );
-  const fastingWindow = windowForShift(fastingToday.shift);
+  const fastingWindow = windowForDate(today, shifts, fastingRotationStart);
 
   // 2.3 Heute fällige Habits
   const active = all.filter(({ habit }) => !habit.archivedAt);
@@ -181,7 +177,11 @@ export default async function DashboardPage() {
             shift={fastingToday.shift}
             window={fastingWindow}
             nextDayStartMin={
-              windowForShift(fastingTomorrow.shift)?.startMin ?? null
+              windowForDate(
+                addDaysISO(today, 1),
+                shifts,
+                fastingRotationStart,
+              )?.startMin ?? null
             }
           />
         </section>

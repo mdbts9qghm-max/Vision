@@ -57,6 +57,14 @@ export const FASTING_WINDOWS: Record<
 };
 
 /**
+ * Zweite (und jede weitere) Nacht in Folge. Anders als bei der ersten Nacht
+ * schläfst du hier 08:00–14:00 und bist erst ab 14:00 wach — ein Fenster ab
+ * 09:00 würde in deinen Tagschlaf fallen. Schluss bleibt 22:00, damit auch
+ * hier höchstens 16 h Fasten folgen.
+ */
+export const FOLLOW_NIGHT_WINDOW = { startMin: hm(14), endMin: hm(22) };
+
+/**
  * Standard-Rotation, die sich fortlaufend wiederholt. Der gesetzte
  * Rotationsstart entspricht dem ERSTEN Eintrag dieser Liste.
  * V-Schichten sind bewusst nicht Teil der Rotation — sie werden bei Bedarf
@@ -130,10 +138,20 @@ export function formatDuration(minutes: number): string {
   return `${h} h ${m} min`;
 }
 
-/** Essensfenster für eine Schichtart. `null` = kein Fasten vorgesehen. */
-export function windowForShift(shift: ShiftType | undefined): EatingWindow | null {
+/**
+ * Essensfenster für eine Schichtart. `null` = kein Fasten vorgesehen.
+ * `followNight` schaltet auf das Fenster der Folgenacht um (Tagschlaf bis 14
+ * Uhr) — für ein konkretes Datum nimmt man besser `windowForDate`.
+ */
+export function windowForShift(
+  shift: ShiftType | undefined,
+  opts: { followNight?: boolean } = {},
+): EatingWindow | null {
   if (!shift) return null;
-  const w = FASTING_WINDOWS[shift];
+  const w =
+    shift === "night" && opts.followNight
+      ? FOLLOW_NIGHT_WINDOW
+      : FASTING_WINDOWS[shift];
   if (!w) return null;
   return {
     ...w,
@@ -170,6 +188,38 @@ export function effectiveShift(
   const rotated = rotationShiftFor(date, rotationStart);
   if (rotated) return { shift: rotated, source: "rotation" };
   return { shift: undefined, source: "none" };
+}
+
+/**
+ * Ist `date` eine Folgenacht (Vortag war ebenfalls Nachtschicht)? Nur dann
+ * gilt das spätere Fenster.
+ */
+export function isFollowNight(
+  date: string,
+  manualShifts: Record<string, ShiftType | undefined>,
+  rotationStart: string | null | undefined,
+): boolean {
+  if (effectiveShift(date, manualShifts, rotationStart).shift !== "night")
+    return false;
+  return (
+    effectiveShift(addDaysISO(date, -1), manualShifts, rotationStart).shift ===
+    "night"
+  );
+}
+
+/**
+ * Essensfenster für ein konkretes Datum — wie `windowForShift`, erkennt aber
+ * zusätzlich Folgenächte. Das ist der Weg, den die UI nehmen sollte.
+ */
+export function windowForDate(
+  date: string,
+  manualShifts: Record<string, ShiftType | undefined>,
+  rotationStart: string | null | undefined,
+): EatingWindow | null {
+  const { shift } = effectiveShift(date, manualShifts, rotationStart);
+  return windowForShift(shift, {
+    followNight: isFollowNight(date, manualShifts, rotationStart),
+  });
 }
 
 export type FastingState = "eating" | "fasting" | "none";
@@ -300,7 +350,14 @@ export function fastingPlan(
   const base = Array.from({ length: days }, (_, i) => {
     const date = addDaysISO(from, i);
     const { shift, source } = effectiveShift(date, manualShifts, rotationStart);
-    return { date, shift, source, window: windowForShift(shift) };
+    return {
+      date,
+      shift,
+      source,
+      window: windowForShift(shift, {
+        followNight: isFollowNight(date, manualShifts, rotationStart),
+      }),
+    };
   });
   return base.map((d, i) => ({
     ...d,
