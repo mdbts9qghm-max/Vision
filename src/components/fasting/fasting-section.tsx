@@ -1,5 +1,10 @@
 import { CalendarRange, Info, Lightbulb, Timer } from "lucide-react";
-import { FASTING_TIPS, type FastingDay } from "@/domain/fasting";
+import {
+  FASTING_TIPS,
+  formatMin,
+  windowForShift,
+  type FastingDay,
+} from "@/domain/fasting";
 import { SHIFT_TYPE_LABEL } from "@/lib/labels";
 import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import { FastingStatusCard } from "@/components/fasting/fasting-status-card";
@@ -83,11 +88,13 @@ export function FastingSection({
             V-Schicht) gewinnt immer über die Rotation.
           </p>
           <p className="px-1 text-xs text-muted-foreground">
-            <span className="text-amber-500">Gelb markiert</span> = Übergangstag
-            mit unter 16 h Fasten. Das passiert, wenn das Fenster am Folgetag
-            früher öffnet (z. B. Schlaftag → Frei) — bei rotierenden Schichten
-            rechnerisch unvermeidbar. Genau dafür gilt: ein unperfekter
-            Übergangstag ruiniert nichts.
+            Die Fenster sind so gelegt, dass <strong>nie mehr als 16 h</strong>{" "}
+            Fasten dazwischen liegen.{" "}
+            <span className="text-amber-500">Gelb</span> = weniger als 16 h
+            (z. B. Schlaftag → Frei, wenn das Fenster nach vorn rutscht) — das
+            ist unkritisch.{" "}
+            <span className="text-destructive">Rot</span> = mehr als 16 h; das
+            kann nur durch eine manuell eingeschobene Schicht entstehen.
           </p>
         </div>
       </CollapsibleCard>
@@ -117,29 +124,42 @@ export function FastingSection({
         </div>
       </CollapsibleCard>
 
-      {/* Fenster je Schicht */}
+      {/* Fenster je Schicht — Zeiten kommen aus FASTING_WINDOWS, nicht doppelt
+          gepflegt. */}
       <CollapsibleCard title="Fenster je Schicht">
         <div className="space-y-1.5 text-sm">
           {(
             [
-              ["day", "07:00–19:00 Arbeit", "09:00–17:00"],
-              ["night", "19:00–07:00 Arbeit, Vorschlaf 15–17", "11:00–19:00"],
-              ["sleep", "08:00–14:00 Schlaf", "14:00–21:00"],
-              ["free", "frei", "09:00–17:00"],
-              ["v", "08:00–20:00 Arbeit", "10:00–18:00"],
+              ["day", "07:00–19:00 Arbeit"],
+              ["night", "19:00–07:00 Arbeit, Vorschlaf 15–17"],
+              ["sleep", "08:00–14:00 Schlaf"],
+              ["free", "frei"],
+              ["v", "08:00–20:00 Arbeit"],
             ] as const
-          ).map(([shift, work, win]) => (
-            <div key={shift} className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0">
-                <span className="font-medium">{SHIFT_TYPE_LABEL[shift]}</span>{" "}
-                <span className="text-xs text-muted-foreground">({work})</span>
-              </span>
-              <span className="shrink-0 whitespace-nowrap tabular-nums text-primary">
-                {win}
-              </span>
-            </div>
-          ))}
+          ).map(([shift, work]) => {
+            const w = windowForShift(shift);
+            return (
+              <div
+                key={shift}
+                className="flex items-baseline justify-between gap-3"
+              >
+                <span className="min-w-0">
+                  <span className="font-medium">{SHIFT_TYPE_LABEL[shift]}</span>{" "}
+                  <span className="text-xs text-muted-foreground">({work})</span>
+                </span>
+                <span className="shrink-0 whitespace-nowrap tabular-nums text-primary">
+                  {w ? `${formatMin(w.startMin)}–${formatMin(w.endMin)}` : "—"}
+                </span>
+              </div>
+            );
+          })}
         </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Nach jedem dieser Fenster liegen höchstens 16 h Fasten. Die
+          Nachtschicht hat bewusst ein längeres Fenster: von dort bis zur
+          Öffnung am Schlaftag sind es 29 h — mit 8 h Fenster wärst du danach
+          21 h nüchtern.
+        </p>
       </CollapsibleCard>
 
       {/* Hinweise */}

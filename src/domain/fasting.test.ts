@@ -35,18 +35,19 @@ describe("windowForShift", () => {
       endMin: hm(17),
       hours: 8,
     });
-    // Nachtschicht: tagsüber essen, Fenster schließt zum Schichtstart.
+    // Nachtschicht: früh öffnen (Vorschlaf 15–17 liegt im Fenster), spät
+    // schließen, damit danach nicht mehr als 16 h Fasten anfallen.
     expect(windowForShift("night")).toMatchObject({
-      startMin: hm(11),
-      endMin: hm(19),
+      startMin: hm(9),
+      endMin: hm(22),
     });
     expect(windowForShift("sleep")).toMatchObject({
       startMin: hm(14),
-      endMin: hm(21),
+      endMin: hm(20),
     });
     expect(windowForShift("v")).toMatchObject({
-      startMin: hm(10),
-      endMin: hm(18),
+      startMin: hm(9),
+      endMin: hm(17),
     });
     // Urlaub wie frei
     expect(windowForShift("vacation")).toMatchObject(
@@ -148,18 +149,31 @@ describe("fastingStatus", () => {
 });
 
 describe("16/8 — Fensterlänge und Fastenlänge", () => {
-  it("kein Fenster ist länger als 8 h", () => {
-    for (const shift of ["day", "night", "sleep", "free", "v", "vacation"] as const) {
+  const ALL_SHIFTS = ["day", "night", "sleep", "free", "v", "vacation"] as const;
+
+  it("jedes Fenster ist gültig und außer der Nachtschicht höchstens 8 h", () => {
+    for (const shift of ALL_SHIFTS) {
       const w = windowForShift(shift);
       expect(w).not.toBeNull();
-      expect(w!.endMin - w!.startMin).toBeLessThanOrEqual(WINDOW_MAX_MIN);
       expect(w!.endMin).toBeGreaterThan(w!.startMin);
+      if (shift !== "night") {
+        expect(w!.endMin - w!.startMin).toBeLessThanOrEqual(WINDOW_MAX_MIN);
+      }
     }
   });
 
-  it("Schlaftag ist bewusst kürzer (wach erst ab 14 Uhr, früh ins Bett)", () => {
+  it("Nachtschicht öffnet früh und schließt spät genug für 16 h danach", () => {
+    const w = windowForShift("night")!;
+    // Früh geöffnet — der Vorschlaf ab 15:00 liegt im Fenster, nicht dahinter.
+    expect(w.startMin).toBe(hm(9));
+    // Schluss um 22:00: bis zur Öffnung am Schlaftag (14:00) sind es genau 16 h.
+    expect(w.endMin).toBe(hm(22));
+  });
+
+  it("Schlaftag schließt ~2 h vor dem Schlafen", () => {
     const w = windowForShift("sleep")!;
-    expect(w.hours).toBe(7);
+    expect(w.startMin).toBe(hm(14));
+    expect(w.endMin).toBe(hm(20));
   });
 
   it("fastBetween rechnet über Mitternacht korrekt", () => {
@@ -167,25 +181,28 @@ describe("16/8 — Fensterlänge und Fastenlänge", () => {
     const f = fastBetween(windowForShift("day"), windowForShift("free"))!;
     expect(f.minutes).toBe(FAST_TARGET_MIN);
     expect(f.short).toBe(false);
+    expect(f.long).toBe(false);
     expect(f.deltaMin).toBe(0);
   });
 
-  it("hält 16 h ein, wenn morgen nicht früher geöffnet wird", () => {
-    // Tag (ab 09:00) -> Nacht (ab 11:00): später -> längeres Fasten
-    const f = fastBetween(windowForShift("day"), windowForShift("night"))!;
-    expect(f.minutes).toBeGreaterThanOrEqual(FAST_TARGET_MIN);
-    expect(f.minutes).toBe(18 * 60);
+  it("markiert einen zu langen Übergang als long", () => {
+    // Nur noch manuell herstellbar: Tagschicht direkt vor einen Schlaftag.
+    const f = fastBetween(windowForShift("day"), windowForShift("sleep"))!;
+    expect(f.minutes).toBe(21 * 60);
+    expect(f.long).toBe(true);
+    expect(f.short).toBe(false);
   });
 
   it("weist den kürzeren Übergang Schlaftag -> Frei aus", () => {
-    // Rechnerisch unvermeidbar: irgendwann rutscht das Fenster wieder nach vorn.
+    // Unkritisch: kürzer als 16 h, nicht länger.
     const f = fastBetween(windowForShift("sleep"), windowForShift("free"))!;
     expect(f.short).toBe(true);
-    expect(f.minutes).toBe(12 * 60);
-    expect(f.deltaMin).toBe(-4 * 60);
+    expect(f.long).toBe(false);
+    expect(f.minutes).toBe(13 * 60);
+    expect(f.deltaMin).toBe(-3 * 60);
   });
 
-  it("Standard-Rotation: genau ein Übergang unter 16 h", () => {
+  it("Standard-Rotation: KEIN Übergang über 16 h", () => {
     const rot = SHIFT_ROTATION;
     const fasts = rot.map((shift, i) =>
       fastBetween(
@@ -193,17 +210,33 @@ describe("16/8 — Fensterlänge und Fastenlänge", () => {
         windowForShift(rot[(i + 1) % rot.length]),
       )!,
     );
+    // Das ist die Zusage der Konfiguration — sie darf nie brechen.
+    for (const f of fasts) {
+      expect(f.minutes).toBeLessThanOrEqual(FAST_TARGET_MIN);
+      expect(f.long).toBe(false);
+    }
+    // Genau ein Übergang ist kürzer (Schlaftag -> Frei).
     expect(fasts.filter((f) => f.short)).toHaveLength(1);
 
-    // Über den Zyklus gilt exakt: Fasten + Fenster = 24 h pro Tag. Im Schnitt
-    // also mindestens 16 h Fasten, weil kein Fenster länger als 8 h ist.
+    // Über den Zyklus gilt exakt: Fasten + Fenster = 24 h pro Tag.
     const totalFast = fasts.reduce((a, f) => a + f.minutes, 0);
     const totalWindow = rot.reduce(
       (a, s) => a + (windowForShift(s)!.endMin - windowForShift(s)!.startMin),
       0,
     );
     expect(totalFast + totalWindow).toBe(rot.length * 1440);
-    expect(totalFast / rot.length).toBeGreaterThanOrEqual(FAST_TARGET_MIN);
+  });
+
+  it("auch ein eingeschobener V-Tag sprengt die 16 h nicht", () => {
+    // V kann laut UI jeden Tag der Rotation überschreiben.
+    for (const neighbour of ["day", "night", "free"] as const) {
+      expect(
+        fastBetween(windowForShift(neighbour), windowForShift("v"))!.long,
+      ).toBe(false);
+      expect(
+        fastBetween(windowForShift("v"), windowForShift(neighbour))!.long,
+      ).toBe(false);
+    }
   });
 });
 
@@ -224,7 +257,7 @@ describe("fastingPlan", () => {
       "free",
     ]);
     expect(plan[2].source).toBe("manual");
-    expect(plan[2].window).toMatchObject({ startMin: hm(10), endMin: hm(18) });
+    expect(plan[2].window).toMatchObject({ startMin: hm(9), endMin: hm(17) });
     expect(plan[0].window?.hours).toBe(8);
   });
 });

@@ -24,20 +24,32 @@ export const FASTING_WINDOWS: Record<
   ShiftType,
   { startMin: number; endMin: number } | null
 > = {
-  // Tagschicht (Arbeit 07:00–19:00)
+  // Tagschicht (Arbeit 07:00–19:00, wach ab ~06:00, Bett ~22:30)
   day: { startMin: hm(9), endMin: hm(17) },
-  // Nachtschicht (Arbeit 19:00–07:00, Vorschlaf 15:00–17:00):
-  // tagsüber essen, nach dem Vorschlaf die kräftige Mahlzeit vor Schichtbeginn,
-  // danach durch die Nacht fasten.
-  night: { startMin: hm(11), endMin: hm(19) },
-  // Schlaftag (Tagschlaf 08:00–14:00): bewusst nur 7 h — du bist erst ab
-  // 14 Uhr wach und gehst früh (~22 Uhr) ins Bett, das Fenster soll ~2–3 h
-  // vor dem Schlafen schließen. Ein volles 8-h-Fenster ginge nur bis 22 Uhr.
-  sleep: { startMin: hm(14), endMin: hm(21) },
+  //
+  // Nachtschicht (Arbeit 19:00–07:00, Vorschlaf 15:00–17:00).
+  //
+  // Dieser Tag ist der Sonderfall: von der Öffnung hier bis zur Öffnung am
+  // Schlaftag (14:00) liegen 29 h, nicht 24 h — du bist über 24 h am Stück
+  // wach. In 29 h passen "8 h essen + 16 h fasten" nicht hinein; entweder
+  // wird das Fenster länger oder das Fasten länger als 16 h. Weil das Fasten
+  // 16 h nicht überschreiten soll, wird hier das Fenster länger.
+  //
+  // Praktischer Rhythmus: Frühstück ab 09:00, letzte Mahlzeit ~14:00 vor dem
+  // Vorschlaf, nach dem Aufstehen um 17:00 die kräftige Mahlzeit vor
+  // Schichtbeginn, danach höchstens noch eine Kleinigkeit bis 22:00 — tief
+  // nachts (2–5 Uhr) bleibt es bewusst zu.
+  night: { startMin: hm(9), endMin: hm(22) },
+  //
+  // Schlaftag (Tagschlaf 08:00–14:00, wach ab 14:00, Bett ~22:00): 6 h, damit
+  // das Fenster ~2 h vor dem Schlafen schließt. Kürzer als 8 h ist unkritisch
+  // — kurze Fenster verlängern das Fasten nie über 16 h hinaus.
+  sleep: { startMin: hm(14), endMin: hm(20) },
   // Freischicht
   free: { startMin: hm(9), endMin: hm(17) },
-  // V-Schicht (Arbeit 08:00–20:00)
-  v: { startMin: hm(10), endMin: hm(18) },
+  // V-Schicht (Arbeit 08:00–20:00) — gleicher Takt wie die Tagschicht, damit
+  // ein eingeschobener V-Tag die 16 h nicht sprengt.
+  v: { startMin: hm(9), endMin: hm(17) },
   // Urlaub — wie ein freier Tag
   vacation: { startMin: hm(9), endMin: hm(17) },
   // Krank — bewusst kein Fasten
@@ -65,8 +77,10 @@ export const FASTING_TIPS = {
     "Tief nachts (2–5 Uhr) nichts Schweres essen — da ist die Verdauung am trägsten.",
   ],
   nightShift: [
-    "Kräftige Mahlzeit vor der Schicht, danach durch die Nacht fasten.",
-    "Bei Bedarf ist eine kleine, proteinreiche Kleinigkeit erlaubt — kein Grund für ein schlechtes Gewissen.",
+    "Letzte richtige Mahlzeit gegen 14 Uhr — mit vollem Magen schläfst du um 15 Uhr schlechter vor.",
+    "Nach dem Vorschlaf (ab 17:00) die kräftige Mahlzeit vor Schichtbeginn.",
+    "In der Schicht höchstens noch eine proteinreiche Kleinigkeit bis 22:00, danach ist zu — tief nachts (2–5 Uhr) verdaut der Körper am schlechtesten.",
+    "Der Nachtschicht-Tag ist 29 h lang. Deshalb ist das Fenster hier länger als 8 h — sonst würdest du danach über 16 h fasten.",
   ],
   mantras: [
     "Schlaf geht vor Fasten.",
@@ -80,10 +94,17 @@ export const FASTING_TIPS = {
 //  LOGIK
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Ziel-Fastenlänge zwischen zwei Fenstern (16 h bei 16/8). */
+/**
+ * Obergrenze fürs Fasten (die „16" in 16/8). Harte Regel: kein Übergang darf
+ * länger sein — kürzer ist erlaubt.
+ */
 export const FAST_TARGET_MIN = 16 * 60;
 
-/** Maximale Fensterlänge (die „8" in 16/8). */
+/**
+ * Reguläre Fensterlänge (die „8" in 16/8). Gilt für alle Tage außer der
+ * Nachtschicht: dort ist der Tag 29 h lang, dort wird das Fenster bewusst
+ * länger, damit das Fasten die 16 h nicht überschreitet.
+ */
 export const WINDOW_MAX_MIN = 8 * 60;
 
 export interface EatingWindow {
@@ -224,18 +245,23 @@ export interface FastBridge {
   minutes: number;
   /** Abweichung vom 16-h-Ziel (negativ = kürzer als 16 h). */
   deltaMin: number;
-  /** Kürzer als 16 h — Übergangstag, an dem das Fenster nach vorn rutscht. */
+  /** Kürzer als 16 h — unkritisch, aber sichtbar gemacht. */
   short: boolean;
+  /** Länger als 16 h — soll in der Standard-Rotation nie vorkommen. */
+  long: boolean;
 }
 
 /**
  * Fastenlänge zwischen dem Fenster von heute und dem von morgen.
  *
- * Rechnerisch gilt: Fasten = 16 h + (Start morgen − Start heute) bei 8-h-
- * Fenstern. Die 16 h werden also genau dann eingehalten, wenn das Fenster
- * morgen nicht früher öffnet als heute. In einer wiederkehrenden Rotation
- * muss es deshalb pro Zyklus mindestens einen kürzeren Übergang geben — der
- * wird hier ausgewiesen statt versteckt.
+ * Es gilt exakt: Fasten = 24 h − Fensterlänge heute + (Start morgen −
+ * Start heute). Die 16 h werden also genau dann eingehalten, wenn
+ * `Fensterschluss heute ≥ Start morgen + 8 h` ist. Genau danach sind die
+ * Fenster in FASTING_WINDOWS gewählt.
+ *
+ * Ein zu LANGER Übergang entsteht nur noch durch manuell eingeschobene
+ * Schichten (z. B. ein Schlaftag mitten in der Woche) — der wird als `long`
+ * markiert statt versteckt.
  */
 export function fastBetween(
   today: EatingWindow | null,
@@ -244,7 +270,12 @@ export function fastBetween(
   if (!today || !tomorrow) return null;
   const minutes = 1440 - today.endMin + tomorrow.startMin;
   const deltaMin = minutes - FAST_TARGET_MIN;
-  return { minutes, deltaMin, short: minutes < FAST_TARGET_MIN };
+  return {
+    minutes,
+    deltaMin,
+    short: minutes < FAST_TARGET_MIN,
+    long: minutes > FAST_TARGET_MIN,
+  };
 }
 
 export interface FastingDay {

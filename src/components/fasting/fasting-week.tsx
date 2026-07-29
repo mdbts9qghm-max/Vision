@@ -60,7 +60,12 @@ export function FastingWeek({
               {d.fast ? (
                 <>
                   {" · "}
-                  <span className={d.fast.short ? "text-amber-500" : undefined}>
+                  <span
+                    className={cn(
+                      d.fast.short && "text-amber-500",
+                      d.fast.long && "text-destructive",
+                    )}
+                  >
                     danach {formatDuration(d.fast.minutes)} Fasten
                   </span>
                 </>
