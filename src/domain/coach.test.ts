@@ -307,15 +307,25 @@ describe("planWeek — krank & Urlaub", () => {
     expect(vacationDay.targetKm).toBeGreaterThan(0);
   });
 
-  it("übriger Schlaftag wird flexibel (optional easy) statt Ruhetag", () => {
-    // Long Run auf Frei (Mo); der Schlaftag (Di) ist longRunDay+1, kriegt kein
-    // Gym und bei Mini-Umfang keinen Lauf -> flexible optionale Einheit.
-    const map = week(["free", "sleep", "day", "day", "day", "day", "day"]);
+  it("freistehender Schlaftag wird flexibel (optional easy)", () => {
+    // Long Run auf Frei (Fr), Kraft auf Frei (Mo). Der Schlaftag (Di) hat
+    // keinen Lauf-Nachbarn — also flexible optionale Einheit.
+    const map = week(["free", "sleep", "day", "day", "free", "day", "day"]);
     const plan = planWeek(params, WEEK, map, 3);
     const sleepDay = plan.days[1];
     expect(sleepDay.kind).toBe("easy");
     expect(sleepDay.optional).toBe(true);
     expect(sleepDay.reason).toContain("flexibel");
-    expect(sleepDay.kind).not.toBe("rest");
+  });
+
+  it("Schlaftag direkt nach dem Long Run bleibt Ruhetag", () => {
+    // Long Run auf Frei (Mo), Schlaftag (Di) direkt danach: eine Einheit hier
+    // ergäbe zwei Lauftage am Stück.
+    const map = week(["free", "sleep", "day", "day", "day", "day", "day"]);
+    const plan = planWeek(params, WEEK, map, 3);
+    expect(plan.days[0].kind).toBe("longrun");
+    const sleepDay = plan.days[1];
+    expect(sleepDay.kind).toBe("rest");
+    expect(sleepDay.reason).toContain("Lauftage am Stück");
   });
 });

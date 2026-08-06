@@ -13,6 +13,7 @@ import {
   phaseForWeek,
   planStartblockWeek,
   planWeek,
+  runDaysOf,
   type CoachParams,
   type ShiftType,
 } from "@/domain/coach";
@@ -153,6 +154,9 @@ async function regenerate(): Promise<void> {
 
   const rows: (typeof plannedSessions.$inferInsert)[] = [];
   const prevWeekPlannedKm = prevPlanned > 0 ? prevPlanned : null;
+  // Lauftage der zuletzt geplanten Woche — verhindert, dass Sonntag und
+  // Montag als Doppelbelastung aneinandergeraten.
+  let runDaysBefore: string[] = [];
   for (
     let weekStart = currentWeek;
     weekStart <= horizon;
@@ -162,7 +166,7 @@ async function regenerate(): Promise<void> {
     const phase = phaseForWeek(idx);
     let plan;
     if (phase === "startblock") {
-      plan = planStartblockWeek(weekStart, shiftMap, idx);
+      plan = planStartblockWeek(weekStart, shiftMap, idx, { runDaysBefore });
     } else {
       let target = baseTargetKm(params, idx);
       if (weekStart === currentWeek) {
@@ -172,8 +176,11 @@ async function regenerate(): Promise<void> {
           prevPlanned > 0 ? prevActuals.km : null,
         );
       }
-      plan = planWeek(params, weekStart, shiftMap, target, phase);
+      plan = planWeek(params, weekStart, shiftMap, target, phase, {
+        runDaysBefore,
+      });
     }
+    runDaysBefore = runDaysOf(plan);
     for (const day of plan.days) {
       if (day.date < today || day.date > horizon) continue;
       rows.push({

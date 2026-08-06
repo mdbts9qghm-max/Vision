@@ -51,6 +51,9 @@ const FOLLOW_NIGHT_REST_REASON =
 const SICK_REST_REASON =
   "Krank gemeldet: heute kein Training. Ruhe, viel trinken, schlafen — Gesundwerden hat Vorrang. Wieder einsteigen, wenn du fieberfrei bist, dann ein paar Tage sehr locker.";
 
+const SLEEP_REST_REASON =
+  "Schlaftag als Ruhetag: davor und/oder danach steht schon ein Lauf. Zwei Lauftage am Stück sind im Startblock der schnellste Weg in eine Überlastung — heute wird nachgeschlafen. Wenn du dich richtig gut fühlst, ist ein Spaziergang die beste Zusatzeinheit.";
+
 const SLEEP_FLEX_REASON =
   "Schlaftag flexibel: War der Tagschlaf gut, lockerer Lauf am Nachmittag (Zone 2, Talk-Test) — nach Gefühl, keine feste Distanz. War der Schlaf schlecht, regenerieren. Trag Schlaf/Recovery im Heute-Tab ein: bei einer schlechten Nacht stuft die Autoregulation automatisch auf Ruhe.";
 
@@ -105,6 +108,26 @@ export interface WeekPlan {
   gymTarget: number;
   nightDeload: boolean;
   days: PlannedDay[];
+}
+
+/** Einheiten, die als Lauftag zählen — Grundlage für die Abstandsregeln. */
+export function isRunKind(kind: SessionKind | undefined): boolean {
+  return kind === "longrun" || kind === "run" || kind === "easy";
+}
+
+/**
+ * Wochen werden einzeln geplant. Damit an der Wochengrenze (So → Mo) keine
+ * Lauftage aneinanderkleben, bekommt die Planung die Lauftage der Vorwoche
+ * mitgeliefert.
+ */
+export interface PlanChain {
+  /** Bereits verplante Lauftage außerhalb dieser Woche (ISO-Daten). */
+  runDaysBefore?: Iterable<string>;
+}
+
+/** Lauftage eines fertigen Wochenplans — Eingabe für die nächste Woche. */
+export function runDaysOf(plan: WeekPlan): string[] {
+  return plan.days.filter((d) => isRunKind(d.kind)).map((d) => d.date);
 }
 
 const SHIFT_LABEL: Record<ShiftType, string> = {
@@ -202,8 +225,10 @@ export function planStartblockWeek(
   weekStart: string,
   shiftByDate: Record<string, ShiftType | undefined>,
   weekIndex: number, // 0–5
+  chain: PlanChain = {},
 ): WeekPlan {
   const spec = STARTBLOCK_WEEKS[Math.min(weekIndex, 5)];
+  const externalRunDays = new Set(chain.runDaysBefore ?? []);
   const dates = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
   const shiftOf = (d: string) => trainingShift(shiftByDate[d]);
   const days = new Map<string, PlannedDay>();
@@ -249,22 +274,24 @@ export function planStartblockWeek(
     if (s === "v") return 1;
     return 0;
   };
-  const isRunDay = (d: string) => {
-    const k = days.get(d)?.kind;
-    return k === "longrun" || k === "run" || k === "easy";
-  };
+  // Lauftage der Vorwoche zählen mit, sonst kleben So und Mo aneinander.
+  const isRunDay = (d: string) =>
+    externalRunDays.has(d) || isRunKind(days.get(d)?.kind);
+  /** Wie viele direkte Nachbarn sind schon Lauftage? */
+  const runNeighbours = (d: string) =>
+    (isRunDay(addDaysISO(d, -1)) ? 1 : 0) + (isRunDay(addDaysISO(d, 1)) ? 1 : 0);
   const candidates = dates
     .filter((d) => !days.has(d) && score(d) > 0)
     .sort((a, b) => score(b) - score(a));
   const runsLongestFirst = [...spec.runsMin].sort((a, b) => b - a);
   runsLongestFirst.forEach((minutes, i) => {
+    // Im Startblock liegt IMMER ein Ruhetag zwischen zwei Läufen — auch über
+    // die Wochengrenze hinweg. Gibt es keinen solchen Tag mehr, fällt der Lauf
+    // weg: lieber eine Einheit weniger als zwei Tage am Stück.
     const day = candidates.find(
-      (d) =>
-        !days.has(d) &&
-        !isRunDay(addDaysISO(d, -1)) &&
-        !isRunDay(addDaysISO(d, 1)),
+      (d) => !days.has(d) && runNeighbours(d) === 0,
     );
-    if (!day) return; // weniger Slots als Läufe → lieber weglassen als quetschen
+    if (!day) return;
     const isLongest = i === 0 && minutes > Math.min(...spec.runsMin);
     claim({
       date: day,
@@ -303,8 +330,10 @@ export function planStartblockWeek(
 
   for (const d of dates) {
     if (days.has(d)) continue;
-    // Freier Schlaftag: flexible optionale Einheit statt Standard-Ruhe.
-    if (shiftOf(d) === "sleep") {
+    // Freier Schlaftag: flexible optionale Einheit statt Standard-Ruhe —
+    // aber nur, wenn dadurch keine Lauftage aneinanderkleben. Sonst ist der
+    // Schlaftag genau das, was er nach einer Nachtschicht sein soll: Ruhe.
+    if (shiftOf(d) === "sleep" && runNeighbours(d) === 0) {
       claim({ date: d, kind: "easy", optional: true, reason: SLEEP_FLEX_REASON });
       continue;
     }
@@ -313,9 +342,11 @@ export function planStartblockWeek(
       kind: "rest",
       optional: false,
       reason:
-        shiftOf(d) === "night"
-          ? FIRST_NIGHT_REST_REASON
-          : "Ruhetag — die Anpassung passiert in der Erholung, nicht im Training.",
+        shiftOf(d) === "sleep"
+          ? SLEEP_REST_REASON
+          : shiftOf(d) === "night"
+            ? FIRST_NIGHT_REST_REASON
+            : "Ruhetag — die Anpassung passiert in der Erholung, nicht im Training.",
     });
   }
 
@@ -337,9 +368,11 @@ export function planWeek(
   shiftByDate: Record<string, ShiftType | undefined>,
   targetKm: number,
   phase: Phase = "ausbau",
+  chain: PlanChain = {},
 ): WeekPlan {
   const dates = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
   const shiftOf = (d: string) => trainingShift(shiftByDate[d]);
+  const externalRunDays = new Set(chain.runDaysBefore ?? []);
 
   const nightCount = dates.filter((d) => shiftOf(d) === "night").length;
   const nightDeload = nightCount >= 3;
@@ -494,10 +527,9 @@ export function planWeek(
   // So wenige Lauftage wie möglich hintereinander: nie 3 in Folge, und
   // höchstens EINE Zweier-Folge pro Woche (Back-to-Back zählt als diese).
   // Basisphase bleibt strenger: immer ein Ruhetag zwischen den Läufen.
-  const isRunClaimed = (d: string) => {
-    const k = days.get(d)?.kind;
-    return k === "longrun" || k === "run" || k === "easy";
-  };
+  // Lauftage der Vorwoche zählen mit, sonst kleben So und Mo aneinander.
+  const isRunClaimed = (d: string) =>
+    externalRunDays.has(d) || isRunKind(days.get(d)?.kind);
   const chosenRunDays: string[] = [];
   const isRun = (d: string) => isRunClaimed(d) || chosenRunDays.includes(d);
   const pairBudget = phase === "basis" ? 0 : 1;
@@ -558,16 +590,21 @@ export function planWeek(
   //    schlechter Nacht von selbst Ruhe daraus.
   for (const d of available()) {
     const s = shiftOf(d);
-    if (s === "sleep") {
+    // Flexibler Schlaftag nur, wenn er keine Lauftage aneinanderreiht.
+    const runNeighbours =
+      (isRun(addDaysISO(d, -1)) ? 1 : 0) + (isRun(addDaysISO(d, 1)) ? 1 : 0);
+    if (s === "sleep" && runNeighbours === 0) {
       claim(d, "easy", SLEEP_FLEX_REASON, undefined, true);
       continue;
     }
     claim(
       d,
       "rest",
-      s === "night"
-        ? FIRST_NIGHT_REST_REASON
-        : `Ruhetag (${s ? SHIFT_LABEL[s] : "—"}) — Erholung ist Teil des Plans.`,
+      s === "sleep"
+        ? SLEEP_REST_REASON
+        : s === "night"
+          ? FIRST_NIGHT_REST_REASON
+          : `Ruhetag (${s ? SHIFT_LABEL[s] : "—"}) — Erholung ist Teil des Plans.`,
     );
   }
 

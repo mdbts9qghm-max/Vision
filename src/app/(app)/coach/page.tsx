@@ -203,22 +203,24 @@ export default async function CoachPage() {
         </CardContent>
       </Card>
 
-      {plan.length === 0 || missingShifts > 0 ? (
-        <Card>
-          <CardContent className="space-y-3 py-4">
-            <p className="text-sm">
-              {missingShifts > 0
+      {/* Neu berechnen ist immer erreichbar — der Plan liegt gespeichert in
+          der DB und übernimmt Regeländerungen erst beim Neuberechnen. */}
+      <Card>
+        <CardContent className="space-y-3 py-4">
+          <p className="text-sm">
+            {plan.length === 0
+              ? "Noch kein Plan berechnet."
+              : missingShifts > 0
                 ? `${missingShifts} von 14 Tagen haben noch keine Schicht — trag sie unten ein, dann plane ich diese Tage.`
-                : "Noch kein Plan berechnet."}
-            </p>
-            <form action={regenerateAction}>
-              <Button type="submit" variant="outline" className="w-full">
-                Plan neu berechnen
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+                : "Alle 14 Tage sind verplant."}
+          </p>
+          <form action={regenerateAction}>
+            <Button type="submit" variant="outline" className="w-full">
+              Plan neu berechnen
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <CoachCalendar weeks={weeks} initialSelected={today} />
 
